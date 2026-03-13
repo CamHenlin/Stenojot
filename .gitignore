@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+
+# Transcription output
+transcriptions/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Misc
+PLAN.md
