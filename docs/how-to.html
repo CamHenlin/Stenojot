@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to use Stenojot</title>
+  <meta name="description" content="How to transcribe, take notes, ask questions, set text replacements, and edit the system prompts in Stenojot.">
+  <meta name="theme-color" content="#f3f0e8">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="brand" href="index.html">
+        <img src="icon.png" width="36" height="36" alt="">
+        Stenojot
+      </a>
+      <nav>
+        <a href="index.html#features">Features</a>
+        <a href="how-to.html" aria-current="page">How to use</a>
+        <a href="https://github.com/CamHenlin/Stenojot">GitHub</a>
+        <a class="nav-download" href="index.html#download">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <h1 class="page-title">How to use</h1>
+      <p class="page-lede">Launching Stenojot starts listening and opens the transcript on the latest day. Closing the window leaves it running. Quit to stop.</p>
+      <div class="guide">
+        <ul class="toc">
+          <li><a href="#transcription">Transcription</a></li>
+          <li><a href="#notes">Notes</a></li>
+          <li><a href="#questions">Questions</a></li>
+          <li><a href="#replacements">Replacements</a></li>
+          <li><a href="#prompts">System prompts</a></li>
+        </ul>
+        <article class="prose">
+          <h2 id="transcription">Transcription</h2>
+          <p>The app listens to the microphone and, if you allow it, to call audio, so both sides of a conversation are written down. Each line is labeled <strong>You</strong> or <strong>Others</strong>.</p>
+          <p>On headphones the two sides stay separate on their own. On speakers, call audio is taken out of the microphone so the other person is not written down twice. If you decline call audio, the microphone is still transcribed, and those lines are labeled You.</p>
+          <p>A Start / Stop button at the top of the window halts transcription and starts it again. Listening is on when the app opens. New lines appear as they are saved, and the transcript stays pinned to the latest line until you scroll up.</p>
+          <p>Days are listed in the sidebar. Search filters that list and the lines on the selected day. Matches include the transcript and notes.</p>
+          <p>Click one line, then another, to select a stretch. Copy puts that stretch on the clipboard, including notes that fall inside it. Escape clears a selection in progress. The same stretch is what the language model sees when you ask a question.</p>
+          <p>A stray “Yeah” or “Okay” that shows up in a notification sound or other background noise is dropped.</p>
+
+          <h2 id="notes">Notes</h2>
+          <p>Click the gap between lines to insert a note, or type a longer one in the composer at the bottom of the window and save it. Notes can be edited or deleted.</p>
+          <p>A note stays with the transcript around it. Copying a stretch includes the notes inside it, and a question about that stretch includes them too.</p>
+
+          <h2 id="questions">Questions</h2>
+          <p>Choose a language model from <strong>LLM Settings</strong> in the menu bar (⇧⌘L). The weights download once into the app’s folder and stay there after you quit. Several sizes are available, from a small model that fits a short question on an 8&nbsp;GB Mac to larger ones that handle a full day more comfortably.</p>
+          <p>Open the LLM panel at the bottom of the transcript. The context line says whether the question is about the full day or about the stretch you selected. Click a line, then another, to choose that stretch. Clear selection sends the whole day.</p>
+          <p>Type a question and press Send, or ⌘Return. The prompt includes who said each line, and any notes in that stretch. The reply streams into the panel and is saved on the transcript.</p>
+          <p>The same loaded model writes action items and daily summaries. Switching models unloads the previous one.</p>
+
+          <h2 id="replacements">Replacements</h2>
+          <p>Open <strong>Text Replacement Settings</strong> from the menu bar. Each rule is a find-and-replace pair. New lines are rewritten before they are saved.</p>
+          <ul>
+            <li>Matching is by whole word and ignores case.</li>
+            <li>A rule with an empty replacement deletes the matched text.</li>
+            <li>Leftover punctuation and extra spaces are cleaned up.</li>
+          </ul>
+          <p><strong>Apply to All Past Transcripts</strong> rewrites what is already saved. A line that becomes empty is removed, along with notes attached to it.</p>
+
+          <h2 id="prompts">System prompts</h2>
+          <p>The menu bar has a <strong>System Prompt</strong> menu with four instructions. Each one opens its own window. Save stores the text on this Mac. An empty instruction uses the built-in one, except Transcript, where empty means no extra instruction at all. Reset restores that window’s built-in text, or clears Transcript.</p>
+
+          <h3 id="prompt-transcript">Transcript</h3>
+          <p>This instruction is sent with questions you ask in the LLM panel. It steers how those answers are written. Leave it empty to send only the transcript and the question. Reset clears it.</p>
+
+          <h3 id="prompt-actions">Action items</h3>
+          <p>The checklist sits beside the transcript. After a pause of about 30 seconds, the model reads the latest finished stretch and adds concrete tasks. A stretch is only scanned once. You can add, check off, and delete items yourself, including when no model is downloaded.</p>
+          <p>This prompt is the instruction for that extraction. The built-in one asks for a JSON array of short tasks: something someone committed to, was asked to do, or still needs to do. Small talk and vague intentions are ignored. If there is nothing to add, the reply is an empty list. Reset restores that built-in text.</p>
+
+          <h3 id="prompt-summary">Summary</h3>
+          <p>Each day in the sidebar has Generate, or View once a summary exists. The day is split into stretches. A new stretch starts after more than a minute with nothing said, so two conversations that follow each other closely can stay in one stretch. Notes are included when they add something the transcript does not. Action items for the day are appended on their own.</p>
+          <p>This prompt is sent with each stretch. The built-in one asks for a short summary of what was discussed, not a line-by-line copy of the transcript. If a stretch has nothing worth keeping, the model is told to output nothing. Reset restores that built-in text. Change it, then use Regenerate in the summary window, when you want a different result.</p>
+
+          <h3 id="prompt-summary-2">Summary Pass 2</h3>
+          <p>After the stretches are written, a second pass reads the finished summary and removes passages that add nothing, such as a note that someone only said “Yeah.” Useful facts, decisions, names, and topics stay. The date heading, time headings, and the action items stay when they are worth keeping. The model is not supposed to add new content.</p>
+          <p>This prompt is that cleanup pass. An empty instruction uses the built-in one. Reset restores it. Regenerate runs both the stretch summaries and this pass again, and replaces that day’s summary, including unsaved edits.</p>
+          <p>If the app stays open past midnight, it writes summaries for the days that ended while it was running. A day it was closed for is left alone until you press Generate.</p>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <p>Stenojot is steno and jot. Steno is shorthand for writing down what was said. Jot is the note that stays with it.</p>
+      <p><a href="https://github.com/CamHenlin/Stenojot">github.com/CamHenlin/Stenojot</a></p>
+    </div>
+  </footer>
+</body>
+</html>

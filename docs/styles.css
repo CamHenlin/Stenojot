@@ -1,0 +1,463 @@
+:root {
+  color-scheme: light;
+  --bg: #f3f0e8;
+  --ink: #1a1916;
+  --muted: #5c564c;
+  --faint: #7a746a;
+  --line: rgba(26, 25, 22, 0.12);
+  --accent: #3a4fd4;
+  --card: #fffdf8;
+  --shadow: 0 28px 70px rgba(48, 36, 16, 0.16);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(900px 420px at 80% -10%, rgba(90, 110, 230, 0.14), transparent 60%),
+    radial-gradient(700px 380px at -10% 8%, rgba(150, 110, 230, 0.1), transparent 55%),
+    var(--bg);
+  color: var(--ink);
+  font-family: Outfit, "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+}
+
+.wrap {
+  width: min(1080px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(243, 240, 232, 0.84);
+  backdrop-filter: blur(16px);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.25rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.brand img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+nav a {
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+nav a:hover {
+  color: var(--ink);
+}
+
+.nav-download {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+nav a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.hero {
+  padding: 4.5rem 0 1rem;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 1.1rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wave {
+  width: 4.2rem;
+  height: auto;
+}
+
+.wave rect {
+  fill: var(--accent);
+}
+
+.wave rect:nth-child(4),
+.wave rect:nth-child(5) {
+  fill: #6a4fd4;
+}
+
+.wave rect:nth-child(6),
+.wave rect:nth-child(7) {
+  fill: #8a62c8;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: Newsreader, "Iowan Old Style", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+
+h1 {
+  max-width: 11ch;
+  font-size: clamp(3.3rem, 8vw, 5.75rem);
+}
+
+h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.lede {
+  max-width: 38rem;
+  margin: 1.4rem 0 0;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.35rem;
+  margin-top: 1.7rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.8rem 1.15rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #f7f4ee;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: #000;
+}
+
+.ghost {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.ghost:hover {
+  color: var(--ink);
+}
+
+.shot {
+  margin: 3.25rem 0 0;
+}
+
+.shot img {
+  width: 100%;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+section {
+  padding: 4.75rem 0;
+}
+
+h2 {
+  margin-bottom: 1.75rem;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  line-height: 1.05;
+}
+
+.features,
+.points {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line);
+}
+
+.features article,
+.points article {
+  padding: 1.45rem 1.75rem 1.45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.features article:nth-child(odd) {
+  padding-right: 2.25rem;
+  border-right: 1px solid var(--line);
+}
+
+.features article:nth-child(even) {
+  padding-left: 2.25rem;
+}
+
+.points {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.points article {
+  padding-right: 1.5rem;
+  border-right: 1px solid var(--line);
+}
+
+.points article + article {
+  padding-left: 1.5rem;
+}
+
+.points article:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.features p,
+.points p,
+.panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.features p + p,
+.panel p + p {
+  margin-top: 0.8rem;
+}
+
+.local {
+  padding-top: 1rem;
+}
+
+.download {
+  padding-top: 0.5rem;
+}
+
+.panel {
+  padding: 2.25rem 2.25rem 2rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background:
+    radial-gradient(520px 180px at 100% 0%, rgba(58, 79, 212, 0.1), transparent 70%),
+    var(--card);
+}
+
+.panel h2 {
+  margin-bottom: 0.9rem;
+}
+
+.panel p + p {
+  margin-top: 0.85rem;
+}
+
+footer {
+  padding: 0 0 2.75rem;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 0.95rem;
+}
+
+.foot p {
+  margin: 0;
+  max-width: 36rem;
+}
+
+.foot a {
+  color: var(--muted);
+}
+
+a:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 800px) {
+  .features,
+  .points,
+  .points article,
+  .features article:nth-child(odd),
+  .features article:nth-child(even) {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+    padding-left: 0;
+    border-right: 0;
+  }
+
+  .foot {
+    flex-direction: column;
+  }
+
+  h1 {
+    max-width: none;
+  }
+
+  nav {
+    gap: 0.85rem;
+  }
+}
+
+.page-title {
+  margin: 3.25rem 0 0.6rem;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+}
+
+.page-lede {
+  max-width: 38rem;
+  margin: 0 0 2.5rem;
+  color: var(--muted);
+  font-size: 1.15rem;
+}
+
+.guide {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 40rem);
+  gap: 3rem;
+  align-items: start;
+  padding-bottom: 4rem;
+}
+
+.toc {
+  position: sticky;
+  top: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.toc a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.toc a:hover {
+  color: var(--ink);
+}
+
+.prose h2 {
+  margin: 2.4rem 0 0.7rem;
+  scroll-margin-top: 5.5rem;
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose h3 {
+  margin: 1.5rem 0 0.35rem;
+  font-family: Newsreader, "Iowan Old Style", Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.prose p,
+.prose li {
+  color: var(--ink);
+}
+
+.prose p {
+  margin: 0.75rem 0 0;
+}
+
+.prose ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.prose li + li {
+  margin-top: 0.4rem;
+}
+
+.prose a {
+  color: var(--accent);
+}
+
+.prompt {
+  margin-top: 0.4rem;
+  padding-top: 0.2rem;
+}
+
+@media (max-width: 800px) {
+  .guide {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .toc {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.45rem 1rem;
+  }
+}
+
+@media (max-width: 520px) {
+  nav a:not(.nav-download) {
+    display: none;
+  }
+}

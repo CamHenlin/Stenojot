@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stenojot — a transcript that stays on your Mac</title>
+  <meta name="description" content="Stenojot transcribes both sides of a conversation on your Mac, then keeps working: notes, action items, a summary of the day, and questions, all from a language model on the same machine.">
+  <meta name="theme-color" content="#f3f0e8">
+  <meta property="og:title" content="Stenojot">
+  <meta property="og:description" content="A transcript that stays useful after the words are written down. Local to your Mac.">
+  <meta property="og:image" content="https://camhenlin.github.io/Stenojot/screenshot.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="brand" href="#top">
+        <img src="icon.png" width="36" height="36" alt="">
+        Stenojot
+      </a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="how-to.html">How to use</a>
+        <a href="https://github.com/CamHenlin/Stenojot">GitHub</a>
+        <a class="nav-download" href="#download">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <p class="kicker">
+          <svg class="wave" viewBox="0 0 72 28" aria-hidden="true">
+            <rect x="0" y="10" width="6" height="8" rx="3"/>
+            <rect x="11" y="6" width="6" height="16" rx="3"/>
+            <rect x="22" y="2" width="6" height="24" rx="3"/>
+            <rect x="33" y="7" width="6" height="14" rx="3"/>
+            <rect x="44" y="4" width="6" height="20" rx="3"/>
+            <rect x="55" y="9" width="6" height="10" rx="3"/>
+            <rect x="66" y="11" width="6" height="6" rx="3"/>
+          </svg>
+          Apple Silicon · macOS 14 or later
+        </p>
+        <h1>A transcript that stays <em>useful</em>.</h1>
+        <p class="lede">Stenojot listens on your Mac and writes both sides of a conversation. Notes sit in the transcript. A language model on the same machine pulls action items, summarizes the day, and answers questions about what was said.</p>
+        <div class="actions">
+          <a class="button" href="https://github.com/CamHenlin/Stenojot/releases/latest/download/Stenojot.zip">Download for Mac</a>
+          <a class="ghost" href="https://github.com/CamHenlin/Stenojot">View the source</a>
+        </div>
+        <figure class="shot">
+          <img src="screenshot.png" width="1284" height="764" alt="Stenojot showing a day's transcript, a note between lines, action items, and the note composer.">
+        </figure>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <h2>After the words are down.</h2>
+        <div class="features">
+          <article>
+            <h3>Both sides of a call</h3>
+            <p>Listens to you and, with permission, to the other person. Each line is labeled You or Others. On speakers, call audio is taken out of the microphone so the other person is not written down twice.</p>
+          </article>
+          <article>
+            <h3>Notes in the transcript</h3>
+            <p>Click the gap between lines, or type a longer note at the bottom of the window. Notes stay with the text they belong to, and they copy with the stretch you select.</p>
+          </article>
+          <article>
+            <h3>Names, the way you want them</h3>
+            <p>Find-and-replace rules rewrite each new line before it is saved. Matching is by whole word and ignores case. The same rules can be applied to transcripts already on disk.</p>
+          </article>
+          <article>
+            <h3>Questions</h3>
+            <p>Ask about the full day, or about a stretch of lines. The model sees who said what, and any notes in that stretch. The reply streams in and is saved on the transcript.</p>
+          </article>
+          <article>
+            <h3>Action items</h3>
+            <p>After a short pause, the model reads the latest stretch and adds concrete tasks. Add, check off, and delete items yourself. The list still works if no model is downloaded.</p>
+          </article>
+          <article>
+            <h3>A summary of the day</h3>
+            <p>Generate a summary from the day’s conversations. Notes are included when they add something, and action items are appended. Edit the result, or regenerate it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="local">
+      <div class="wrap">
+        <h2>It stays on this Mac.</h2>
+        <div class="points">
+          <article>
+            <h3>A database on disk</h3>
+            <p>Transcripts, notes, action items, and summaries live in Application Support. Start empty, or import a database you already have.</p>
+          </article>
+          <article>
+            <h3>Models that download once</h3>
+            <p>Parakeet turns speech into text. A language model you choose, from a small one that fits an 8&nbsp;GB Mac to a larger one for a full day, stays in the app’s folder after you quit.</p>
+          </article>
+          <article>
+            <h3>Nothing is uploaded</h3>
+            <p>Questions, action items, and daily summaries run on the machine. Closing the window leaves listening on. Quitting stops it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="download">
+      <div class="wrap">
+        <div class="panel">
+          <h2>Download Stenojot</h2>
+          <p>Unzip it and move <strong>Stenojot</strong> to Applications. The first time you open it, Control-click the app and choose Open, then Open again. macOS does not recognize this copy’s signature, so a normal double-click stays blocked until you do that.</p>
+          <p>The zip does not include the transcription packages or the model weights. Those download on first launch.</p>
+          <div class="actions">
+            <a class="button" href="https://github.com/CamHenlin/Stenojot/releases/latest/download/Stenojot.zip">Download Stenojot.zip</a>
+            <a class="ghost" href="how-to.html">How to use it</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <p>Stenojot is steno and jot. Steno is shorthand for writing down what was said. Jot is the note that stays with it.</p>
+      <p><a href="https://github.com/CamHenlin/Stenojot">github.com/CamHenlin/Stenojot</a></p>
+    </div>
+  </footer>
+</body>
+</html>
