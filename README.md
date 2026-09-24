@@ -2,8 +2,6 @@
 
 Real-time speech-to-text for Apple Silicon. A native Mac app captures the microphone and call audio, a bundled Python sidecar transcribes each speaker with NVIDIA Parakeet TDT v2 through MLX, and a SwiftUI window shows the transcript as it is saved.
 
-The earlier Node.js orchestrator, Express server, and Vue web UI are gone. Capture, storage, search, notes, and the language-model features all live in the Mac app. The sidecar still does voice detection and transcription.
-
 ## Requirements
 
 - Apple Silicon Mac
