@@ -39,6 +39,7 @@
           <li><a href="#notes">Notes</a></li>
           <li><a href="#questions">Questions</a></li>
           <li><a href="#replacements">Replacements</a></li>
+          <li><a href="#summaries">Daily summaries</a></li>
           <li><a href="#prompts">System prompts</a></li>
         </ul>
         <article class="prose">
@@ -69,6 +70,12 @@
           </ul>
           <p><strong>Apply to All Past Transcripts</strong> rewrites what is already saved. A line that becomes empty is removed, along with notes attached to it.</p>
 
+          <h2 id="summaries">Daily summaries</h2>
+          <p>Each day in the sidebar has <strong>Generate</strong>, or <strong>View</strong> once a summary exists. Generate needs a language model from LLM Settings. The same model that answers questions writes the summary.</p>
+          <p>The day is split into stretches. A new stretch starts after more than a minute with nothing said, so two conversations that follow each other closely can stay in one stretch. The model summarizes each stretch. Notes are included when they add something the transcript does not. Action items for the day are appended on their own.</p>
+          <p>A second pass then reads the finished summary and removes passages that add nothing, such as a note that someone only said “Yeah.” The result opens in its own window. Edit it and press Save. <strong>Regenerate</strong> runs the summary again and replaces that day, including unsaved edits. Change the summary prompts first if you want a different result.</p>
+          <p>If the app stays open past midnight, it writes summaries for the days that ended while it was running. A day it was closed for is left alone until you press Generate.</p>
+
           <h2 id="prompts">System prompts</h2>
           <p>The menu bar has a <strong>System Prompt</strong> menu with four instructions. Each one opens its own window. Save stores the text on this Mac. An empty instruction uses the built-in one, except Transcript, where empty means no extra instruction at all. Reset restores that window’s built-in text, or clears Transcript.</p>
 
@@ -80,13 +87,10 @@
           <p>This prompt is the instruction for that extraction. The built-in one asks for a JSON array of short tasks: something someone committed to, was asked to do, or still needs to do. Small talk and vague intentions are ignored. If there is nothing to add, the reply is an empty list. Reset restores that built-in text.</p>
 
           <h3 id="prompt-summary">Summary</h3>
-          <p>Each day in the sidebar has Generate, or View once a summary exists. The day is split into stretches. A new stretch starts after more than a minute with nothing said, so two conversations that follow each other closely can stay in one stretch. Notes are included when they add something the transcript does not. Action items for the day are appended on their own.</p>
-          <p>This prompt is sent with each stretch. The built-in one asks for a short summary of what was discussed, not a line-by-line copy of the transcript. If a stretch has nothing worth keeping, the model is told to output nothing. Reset restores that built-in text. Change it, then use Regenerate in the summary window, when you want a different result.</p>
+          <p>This instruction is sent with each stretch when a daily summary is generated. The built-in one asks for a short summary of what was discussed, not a line-by-line copy of the transcript. If a stretch has nothing worth keeping, the model is told to output nothing. An empty instruction uses that built-in text. Reset restores it.</p>
 
           <h3 id="prompt-summary-2">Summary Pass 2</h3>
-          <p>After the stretches are written, a second pass reads the finished summary and removes passages that add nothing, such as a note that someone only said “Yeah.” Useful facts, decisions, names, and topics stay. The date heading, time headings, and the action items stay when they are worth keeping. The model is not supposed to add new content.</p>
-          <p>This prompt is that cleanup pass. An empty instruction uses the built-in one. Reset restores it. Regenerate runs both the stretch summaries and this pass again, and replaces that day’s summary, including unsaved edits.</p>
-          <p>If the app stays open past midnight, it writes summaries for the days that ended while it was running. A day it was closed for is left alone until you press Generate.</p>
+          <p>This instruction is the cleanup pass over the finished summary. The built-in one drops passages that add no information and keeps useful facts, the date heading, time headings, and action items when they are worth keeping. It is not supposed to add new content. An empty instruction uses that built-in text. Reset restores it.</p>
         </article>
       </div>
     </div>
