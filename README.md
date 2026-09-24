@@ -17,7 +17,7 @@ The name is steno and jot. Steno is shorthand for writing down what was said. Jo
 
 ## Download
 
-[Download Stenojot](https://github.com/CamHenlin/Transcriber/releases/latest/download/Stenojot.zip) for an Apple Silicon Mac on macOS 14 or later.
+[Download Stenojot](https://github.com/CamHenlin/Stenojot/releases/latest/download/Stenojot.zip) for an Apple Silicon Mac on macOS 14 or later.
 
 Unzip it and move **Stenojot** to Applications. The first time you open it, Control-click the app and choose Open, then Open again. macOS does not recognize this copy's signature, so a normal double-click stays blocked until you do that.
 
