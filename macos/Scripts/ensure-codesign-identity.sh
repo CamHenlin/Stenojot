@@ -9,7 +9,8 @@ PASSWORD="parakeet-local-codesign"
 
 mkdir -p "$(dirname "$KEYCHAIN")"
 
-if ! security find-certificate -c "$IDENTITY" "$KEYCHAIN" >/dev/null 2>&1; then
+# A leftover certificate with no usable private key still has to be recreated.
+if ! security find-identity -v -p codesigning "$KEYCHAIN" 2>/dev/null | grep -q "\"$IDENTITY\""; then
   security delete-keychain "$KEYCHAIN" >/dev/null 2>&1 || true
   security create-keychain -p "$PASSWORD" "$KEYCHAIN"
   security set-keychain-settings -lut 21600 "$KEYCHAIN"

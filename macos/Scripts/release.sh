@@ -20,17 +20,25 @@ ZIP="$MACOS/build/ParakeetTranscriber.zip"
 
 cd "$ROOT"
 
+# Skip Xcode's codesign. The product is copied off this folder (Documents can
+# attach Finder info that codesign rejects) and ad-hoc signed below.
 xcodebuild \
   -project "$MACOS/ParakeetTranscriber.xcodeproj" \
   -scheme ParakeetTranscriber \
   -configuration Release \
   -destination "platform=macOS,arch=arm64" \
   -derivedDataPath "$DERIVED" \
+  CODE_SIGNING_ALLOWED=NO \
   build
 
-codesign --verify --deep --strict "$APP"
+STAGED="$(mktemp -d)/Parakeet Transcriber.app"
+ditto --norsrc "$APP" "$STAGED"
+xattr -cr "$STAGED" || true
+codesign --force --deep --sign - "$STAGED"
+codesign --verify --deep --strict "$STAGED"
+
 rm -f "$ZIP"
-ditto -c -k --keepParent "$APP" "$ZIP"
+ditto -c -k --keepParent "$STAGED" "$ZIP"
 
 gh release create "$TAG" "$ZIP" \
   --title "Parakeet Transcriber $TAG" \
