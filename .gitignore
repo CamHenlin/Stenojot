@@ -4,9 +4,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Node
-node_modules/
-
 # SQLite
 *.db
 *.db-wal
@@ -28,3 +25,12 @@ Thumbs.db
 
 # Misc
 PLAN.md
+
+# Native Mac app
+macos/Vendor/
+macos/build/
+macos/.codesign/
+macos/TranscriberCore/.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/

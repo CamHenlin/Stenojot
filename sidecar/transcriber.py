@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """
-Real-time microphone transcription engine using parakeet-mlx.
+Real-time transcription engine using parakeet-mlx.
 
-Captures audio from the default microphone, detects speech segments
-using energy-based VAD, and transcribes them with NVIDIA Parakeet TDT v2
-running on Apple Silicon via the MLX framework.
+The Mac app writes speaker-tagged PCM frames to stdin. This process detects
+speech with energy-based VAD and transcribes it with NVIDIA Parakeet TDT v2
+on Apple Silicon via MLX.
 
 Communication protocol:
-  - stdout: newline-delimited JSON messages (consumed by Node.js)
+  - stdin: each frame is one speaker byte (0 = you, 1 = caller) followed by
+    960 bytes of 16 kHz mono int16le PCM
+  - stdout: newline-delimited JSON messages
   - stderr: human-readable log/progress messages
 """
 
 import sys
 import json
 import signal
-import tempfile
-import os
-import wave
 import collections
+import threading
+import time
 from datetime import datetime, timezone
 
 import numpy as np
-import sounddevice as sd
 
 SAMPLE_RATE = 16000
-CHANNELS = 1
 FRAME_DURATION_MS = 30
 FRAME_SIZE = int(SAMPLE_RATE * FRAME_DURATION_MS / 1000)  # 480 samples
 
@@ -36,7 +35,6 @@ MAX_SPEECH_SECONDS = 30  # force-transcribe after this duration
 MIN_SPEECH_SECONDS = 0.5  # ignore segments shorter than this
 
 # Adaptive threshold settings
-ADAPTIVE_THRESHOLD = True
 NOISE_FLOOR_FRAMES = 100  # frames to sample for ambient noise level on startup
 NOISE_FLOOR_MULTIPLIER = 3.0  # speech threshold = noise_floor * this
 
@@ -47,7 +45,7 @@ def log(msg):
 
 
 def emit(msg_type, **kwargs):
-    """Send a JSON message to stdout for the Node.js orchestrator."""
+    """Send a JSON message to stdout for the Mac app."""
     msg = {"type": msg_type, **kwargs}
     print(json.dumps(msg), flush=True)
 
@@ -79,44 +77,253 @@ def extract_text(result):
 
 
 def transcribe_segment(model, frames):
-    """Write speech frames to a temp WAV file, transcribe, and return (text, raw_output)."""
-    raw = b"".join(frames)
-    tmp_path = None
+    """Transcribe int16 PCM frames and return (text, raw_output).
+
+    parakeet-mlx's file API shells out to ffmpeg. The app already captured
+    16 kHz mono PCM, which is the same format ffmpeg would have produced.
+    """
+    import mlx.core as mx
+    from parakeet_mlx.audio import get_logmel
+
+    pcm = np.frombuffer(b"".join(frames), dtype=np.int16)
+    samples = pcm.astype(np.float32) / 32768.0
+    target_rate = int(model.preprocessor_config.sample_rate)
+    if target_rate != SAMPLE_RATE and len(samples) > 1:
+        target_length = max(1, int(round(len(samples) * target_rate / SAMPLE_RATE)))
+        source_x = np.linspace(0.0, 1.0, num=len(samples), endpoint=False)
+        target_x = np.linspace(0.0, 1.0, num=target_length, endpoint=False)
+        samples = np.interp(target_x, source_x, samples).astype(np.float32)
+
+    audio = mx.array(samples)
+    mel = get_logmel(audio, model.preprocessor_config)
+    result = model.generate(mel)[0]
+    return extract_text(result), repr(result)
+
+
+MODEL_ID = "mlx-community/parakeet-tdt-0.6b-v2"
+
+
+def _cached_file(model_id, filename):
+    """Return a local HF cache path for filename, or None if missing."""
+    from huggingface_hub import try_to_load_from_cache
+
+    path = try_to_load_from_cache(model_id, filename)
+    return path if isinstance(path, str) else None
+
+
+def resolve_model_files(model_id=MODEL_ID):
+    """
+    Resolve config.json + model.safetensors, preferring the local HF cache.
+
+    Avoids parakeet_mlx.from_pretrained's hub-then-local fallback, which turns
+    SSL/network failures into a misleading FileNotFoundError on the repo id path.
+    """
+    from huggingface_hub import hf_hub_download
+
+    config_path = _cached_file(model_id, "config.json")
+    weight_path = _cached_file(model_id, "model.safetensors")
+    if config_path and weight_path:
+        log(f"Using cached model files for {model_id}")
+        return config_path, weight_path
+
+    log(f"Model not fully cached; downloading {model_id}...")
     try:
-        fd, tmp_path = tempfile.mkstemp(suffix=".wav")
-        with wave.open(os.fdopen(fd, "wb"), "wb") as wf:
-            wf.setnchannels(CHANNELS)
-            wf.setsampwidth(2)  # 16-bit
-            wf.setframerate(SAMPLE_RATE)
-            wf.writeframes(raw)
-        result = model.transcribe(tmp_path)
-        text = extract_text(result)
-        raw_output = repr(result)
-        return text, raw_output
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+        config_path = hf_hub_download(model_id, "config.json")
+        weight_path = hf_hub_download(model_id, "model.safetensors")
+        return config_path, weight_path
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not download model '{model_id}'. "
+            "On macOS with the python.org installer, run "
+            "'Install Certificates.command' from /Applications/Python 3.x/, "
+            "then retry. "
+            f"Underlying error: {e}"
+        ) from e
 
 
-def calibrate_noise_floor(audio_queue, stream):
-    """Sample ambient noise for a few seconds to set an adaptive threshold."""
+def load_model(model_id=MODEL_ID):
+    """Load Parakeet from HF cache or download, without relying on from_pretrained."""
+    import json
+
+    import mlx.core as mx
+    from mlx.utils import tree_flatten, tree_unflatten
+    from parakeet_mlx.utils import from_config
+
+    config_path, weight_path = resolve_model_files(model_id)
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    model = from_config(config)
+    model.load_weights(weight_path)
+
+    dtype = mx.bfloat16
+    curr_weights = [(k, v.astype(dtype)) for k, v in dict(tree_flatten(model.parameters())).items()]
+    model.update(tree_unflatten(curr_weights))
+    return model
+
+
+def start_speaker_reader(audio_queue, stdin_closed):
+    """Read speaker-tagged PCM frames: 1 byte speaker + 960 bytes PCM."""
+    frame_len = FRAME_SIZE * 2
+
+    def run():
+        while True:
+            header = sys.stdin.buffer.read(1)
+            if not header:
+                stdin_closed.set()
+                break
+            payload = sys.stdin.buffer.read(frame_len)
+            if len(payload) != frame_len:
+                stdin_closed.set()
+                break
+            speaker = "you" if header[0] == 0 else "caller"
+            audio_queue.append((speaker, payload))
+
+    threading.Thread(target=run, daemon=True).start()
+
+
+class SpeechSegmenter:
+    """Energy VAD for one speaker. Emits a transcription when a phrase ends."""
+
+    def __init__(self, speaker, threshold):
+        self.speaker = speaker
+        self.threshold = threshold
+        self.ring_buffer = collections.deque(maxlen=5)
+        self.speech_frames = []
+        self.is_speaking = False
+        self.voiced_count = 0
+        self.unvoiced_count = 0
+        self.total_speech_frames = 0
+
+    def push(self, model, frame_bytes):
+        energy = rms_energy(frame_bytes)
+        is_voiced = energy > self.threshold
+
+        if not self.is_speaking:
+            self.ring_buffer.append(frame_bytes)
+            if is_voiced:
+                self.voiced_count += 1
+            else:
+                self.voiced_count = 0
+
+            if self.voiced_count >= SPEECH_FRAMES_THRESHOLD:
+                self.is_speaking = True
+                self.speech_frames = list(self.ring_buffer)
+                self.total_speech_frames = len(self.speech_frames)
+                self.voiced_count = 0
+                self.unvoiced_count = 0
+                self.ring_buffer.clear()
+                log(f"Speech detected ({self.speaker})...")
+            return
+
+        self.speech_frames.append(frame_bytes)
+        self.total_speech_frames += 1
+        if is_voiced:
+            self.unvoiced_count = 0
+        else:
+            self.unvoiced_count += 1
+
+        speech_duration = self.total_speech_frames * FRAME_DURATION_MS / 1000.0
+        silence_triggered = self.unvoiced_count >= SILENCE_FRAMES_THRESHOLD
+        max_duration_reached = speech_duration >= MAX_SPEECH_SECONDS
+        if silence_triggered or max_duration_reached:
+            self._finish(model, speech_duration)
+
+    def flush(self, model):
+        if not self.speech_frames:
+            return
+        speech_duration = self.total_speech_frames * FRAME_DURATION_MS / 1000.0
+        self._finish(model, speech_duration)
+
+    def _finish(self, model, speech_duration):
+        if speech_duration >= MIN_SPEECH_SECONDS:
+            log(f"Transcribing {speech_duration:.1f}s {self.speaker} segment...")
+            try:
+                text, raw_output = transcribe_segment(model, self.speech_frames)
+                if text:
+                    timestamp = datetime.now(timezone.utc).isoformat()
+                    emit(
+                        "transcription",
+                        text=text,
+                        raw_output=raw_output,
+                        timestamp=timestamp,
+                        speaker=self.speaker,
+                    )
+                    log(f"Transcribed ({self.speaker}): {text}")
+            except Exception as e:
+                log(f"Transcription error: {e}")
+                emit("error", message=f"Transcription error: {e}")
+        else:
+            log(f"Skipping short {self.speaker} segment ({speech_duration:.1f}s)")
+
+        self.speech_frames = []
+        self.is_speaking = False
+        self.voiced_count = 0
+        self.unvoiced_count = 0
+        self.total_speech_frames = 0
+        self.ring_buffer.clear()
+
+
+def calibrate_you(audio_queue, stdin_closed):
+    """Sample the local microphone. Call audio that arrives early is kept."""
     log("Calibrating noise floor (stay quiet for 2 seconds)...")
     emit("status", message="Calibrating noise floor (stay quiet for 2 seconds)...")
     energies = []
+    parked_caller = []
     while len(energies) < NOISE_FLOOR_FRAMES:
+        if stdin_closed.is_set() and not audio_queue:
+            raise RuntimeError("Audio stream ended during calibration")
         if not audio_queue:
-            sd.sleep(10)
+            time.sleep(0.01)
             continue
-        frame_bytes = audio_queue.popleft()
-        expected_bytes = FRAME_SIZE * 2
-        if len(frame_bytes) != expected_bytes:
-            continue
-        energies.append(rms_energy(frame_bytes))
+        speaker, frame_bytes = audio_queue.popleft()
+        if speaker == "you":
+            energies.append(rms_energy(frame_bytes))
+        else:
+            parked_caller.append(frame_bytes)
 
-    noise_floor = np.mean(energies)
-    threshold = max(noise_floor * NOISE_FLOOR_MULTIPLIER, 200)  # minimum threshold of 200
+    noise_floor = float(np.mean(energies))
+    threshold = max(noise_floor * NOISE_FLOOR_MULTIPLIER, 200)
     log(f"Noise floor: {noise_floor:.0f}, speech threshold: {threshold:.0f}")
-    return threshold
+    return threshold, parked_caller
+
+
+def run_speaker_session(model, audio_queue, stdin_closed, should_stop):
+    threshold, parked_caller = calibrate_you(audio_queue, stdin_closed)
+    you = SpeechSegmenter("you", threshold)
+    caller = SpeechSegmenter("caller", RMS_THRESHOLD)
+    caller_noise = []
+
+    def push_caller(frame_bytes):
+        if len(caller_noise) < NOISE_FLOOR_FRAMES:
+            energy = rms_energy(frame_bytes)
+            if energy < caller.threshold:
+                caller_noise.append(energy)
+            if len(caller_noise) == NOISE_FLOOR_FRAMES:
+                floor = float(np.mean(caller_noise))
+                caller.threshold = max(floor * NOISE_FLOOR_MULTIPLIER, 200)
+                log(f"Caller noise floor: {floor:.0f}, speech threshold: {caller.threshold:.0f}")
+        caller.push(model, frame_bytes)
+
+    emit("status", message="Listening...")
+    log("Listening...")
+    for frame_bytes in parked_caller:
+        push_caller(frame_bytes)
+
+    while not should_stop():
+        if not audio_queue:
+            if stdin_closed.is_set():
+                break
+            time.sleep(0.01)
+            continue
+        speaker, frame_bytes = audio_queue.popleft()
+        if speaker == "you":
+            you.push(model, frame_bytes)
+        else:
+            push_caller(frame_bytes)
+
+    you.flush(model)
+    caller.flush(model)
 
 
 def main():
@@ -130,145 +337,28 @@ def main():
     signal.signal(signal.SIGTERM, handle_signal)
     signal.signal(signal.SIGINT, handle_signal)
 
-    # Load model
     emit("status", message="Loading model (first run will download ~1.2GB)...")
     log("Loading parakeet-mlx model...")
     try:
-        from parakeet_mlx import from_pretrained
-        model = from_pretrained("mlx-community/parakeet-tdt-0.6b-v2")
+        model = load_model()
     except Exception as e:
         emit("error", message=f"Failed to load model: {e}")
         log(f"Error loading model: {e}")
         sys.exit(1)
 
-    emit("status", message="Model loaded. Setting up microphone...")
-    log("Model loaded. Setting up microphone...")
-
-    # Ring buffer for pre-speech padding
-    PADDING_FRAMES = 5
-    ring_buffer = collections.deque(maxlen=PADDING_FRAMES)
-
-    speech_frames = []
-    is_speaking = False
-    voiced_count = 0
-    unvoiced_count = 0
-    total_speech_frames = 0
+    emit("status", message="Model loaded. Waiting for audio...")
+    log("Model loaded. Waiting for audio...")
 
     audio_queue = collections.deque()
-
-    def audio_callback(indata, frame_count, time_info, status):
-        if status:
-            log(f"Audio status: {status}")
-        pcm = (indata[:, 0] * 32767).astype(np.int16).tobytes()
-        audio_queue.append(pcm)
-
+    stdin_closed = threading.Event()
+    start_speaker_reader(audio_queue, stdin_closed)
     try:
-        stream = sd.InputStream(
-            samplerate=SAMPLE_RATE,
-            channels=CHANNELS,
-            dtype="float32",
-            blocksize=FRAME_SIZE,
-            callback=audio_callback,
-        )
-        stream.start()
+        run_speaker_session(model, audio_queue, stdin_closed, lambda: shutdown)
     except Exception as e:
-        emit("error", message=f"Microphone not available: {e}")
-        log(f"Error opening microphone: {e}")
+        emit("error", message=str(e))
+        log(f"Error reading speaker audio: {e}")
         sys.exit(1)
-
-    # Calibrate noise floor for adaptive threshold
-    if ADAPTIVE_THRESHOLD:
-        speech_threshold = calibrate_noise_floor(audio_queue, stream)
-    else:
-        speech_threshold = RMS_THRESHOLD
-
-    emit("status", message="Listening...")
-    log("Listening on default microphone...")
-
-    try:
-        while not shutdown:
-            if not audio_queue:
-                sd.sleep(10)
-                continue
-
-            frame_bytes = audio_queue.popleft()
-
-            expected_bytes = FRAME_SIZE * 2
-            if len(frame_bytes) != expected_bytes:
-                continue
-
-            energy = rms_energy(frame_bytes)
-            is_voiced = energy > speech_threshold
-
-            if not is_speaking:
-                ring_buffer.append(frame_bytes)
-                if is_voiced:
-                    voiced_count += 1
-                else:
-                    voiced_count = 0
-
-                if voiced_count >= SPEECH_FRAMES_THRESHOLD:
-                    is_speaking = True
-                    speech_frames = list(ring_buffer)
-                    total_speech_frames = len(speech_frames)
-                    voiced_count = 0
-                    unvoiced_count = 0
-                    ring_buffer.clear()
-                    log("Speech detected...")
-            else:
-                speech_frames.append(frame_bytes)
-                total_speech_frames += 1
-
-                if is_voiced:
-                    unvoiced_count = 0
-                else:
-                    unvoiced_count += 1
-
-                speech_duration = total_speech_frames * FRAME_DURATION_MS / 1000.0
-                silence_triggered = unvoiced_count >= SILENCE_FRAMES_THRESHOLD
-                max_duration_reached = speech_duration >= MAX_SPEECH_SECONDS
-
-                if silence_triggered or max_duration_reached:
-                    if speech_duration >= MIN_SPEECH_SECONDS:
-                        log(f"Transcribing {speech_duration:.1f}s segment...")
-                        try:
-                            text, raw_output = transcribe_segment(model, speech_frames)
-                            if text:
-                                timestamp = datetime.now(timezone.utc).isoformat()
-                                emit("transcription", text=text, raw_output=raw_output, timestamp=timestamp)
-                                log(f"Transcribed: {text}")
-                        except Exception as e:
-                            log(f"Transcription error: {e}")
-                            emit("error", message=f"Transcription error: {e}")
-                    else:
-                        log(f"Skipping short segment ({speech_duration:.1f}s)")
-
-                    speech_frames = []
-                    is_speaking = False
-                    voiced_count = 0
-                    unvoiced_count = 0
-                    total_speech_frames = 0
-                    ring_buffer.clear()
-
-    except KeyboardInterrupt:
-        log("Interrupted by user.")
-    finally:
-        stream.stop()
-        stream.close()
-
-        if speech_frames:
-            speech_duration = total_speech_frames * FRAME_DURATION_MS / 1000.0
-            if speech_duration >= MIN_SPEECH_SECONDS:
-                log(f"Transcribing final {speech_duration:.1f}s segment...")
-                try:
-                    text, raw_output = transcribe_segment(model, speech_frames)
-                    if text:
-                        timestamp = datetime.now(timezone.utc).isoformat()
-                        emit("transcription", text=text, raw_output=raw_output, timestamp=timestamp)
-                except Exception as e:
-                    log(f"Final transcription error: {e}")
-
-        log("Transcriber shut down.")
+    log("Transcriber shut down.")
 
 
 if __name__ == "__main__":
