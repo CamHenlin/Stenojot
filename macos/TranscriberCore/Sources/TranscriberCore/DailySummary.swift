@@ -52,11 +52,17 @@ public enum DailySummaryDocument {
     public static let chunkSystemPrompt = """
     You summarize a stretch of a transcribed day. The user will keep your summary and may edit it.
 
-    Write a short summary of what was discussed. Do not reproduce the transcript, quote it line by line, or list every turn.
+    Write a short summary of what was discussed. Do not reproduce the transcript, quote it line by line, or list every turn. If the summary has no valuable information, output nothing.
 
-    This stretch was cut only where more than a minute passed with no transcript. Someone can leave one meeting and join another with less than a minute between them, so this stretch may contain more than one conversation. When you can tell those apart, summarize each conversation on its own. When it is one conversation, write one summary.
+    This stretch was cut only where more than a minute passed with no transcript. Someone can leave one meeting and join another with less than a minute between them, so this stretch may contain more than one conversation. When you can tell those apart, summarize each conversation on its own with a new heading and timestamp. When it is one conversation, write one summary.
 
-    Include the user's notes when they add something the transcript does not. Do not list action items; those are added separately. Do not add a time heading or a preamble.
+    Include the user's notes when they add something the transcript does not. Do not list action items; those are added separately. Do not add a time heading or a preamble. If there is a change in subject, note the new subject on a new line surrounded by asterisks, like bolded text in a markdown file.
+
+    If there is nothing discernable of value, do not output anything, so the summary is as clean as possible based only on actual insights from the transcription input. If there is no elaboration or the input text is apparently of no or little value, do not output anything. Additionally, if something is unclear or difficult to decipher, leave it out of the output as well. If details are not discernable, output nothing.
+
+    Don't output text like "Nothing discernable of value." and things along those lines, that is not valuable or useful in a daily summary. Just output nothing if there is no discernable value.
+
+    Mainly, we are trying to get to meaningful insights about the transcript only. It is desirable to have no output for the inputted text if it does not have value.
     """
 
     /// The instruction sent with each stretch. A blank stored prompt uses the built-in one.
@@ -66,11 +72,24 @@ public enum DailySummaryDocument {
 
     /// Instruction for the cleanup pass over a finished daily summary.
     public static let cleanupSystemPrompt = """
-    You clean a daily summary the user will keep. The summary includes a date heading, time headings for each stretch, and an Action items section.
+    You clean a daily summary the user will keep. The summary includes a date heading, time headings for each stretch, and an Action items section. You can and should completely drop sections from the input text if they are meaningless and have no value. You can also clean up repetition. We are trying to get to an easily digestible summary of the day's meetings.
 
-    Remove passages that add no information. Drop a sentence or paragraph that only reports a bare acknowledgement, such as someone saying "Yeah", or that only says a person responded without adding context. Use the rest of the summary to decide: keep a short reply when it confirms a decision, answers a question, or otherwise changes what the summary says.
+    Remove passages that add no information. Drop a sentence or paragraph that only reports a bare acknowledgement, such as someone saying "Yeah", or that only says a person responded without adding context. Just entirely remove those from the summary. If that's all that's in the entire timestamped section, remove that section.
 
-    Leave useful facts, decisions, names, and topics as written. Keep the date heading, the time headings, and the Action items section unchanged. Do not add content. Return only the cleaned summary.
+    Leave useful facts, decisions, names, and topics as written. Keep the date heading, the time headings, and the Action items section unchanged, if they are valuable. Do not add content. Return only the cleaned summary.
+
+    Text along the lines of:
+
+    - `"The user's note: "Something was agreed upon, but not sure what."`
+    - `the user seems to be waiting for someone to confirm or agree on something. The user's notes: Waiting for confirmation on something.`
+    - `The user responded with a single word "Yeah" to someone, indicating agreement or confirmation.`
+    - `The user seems to be confirming or agreeing to something, but the conversation is unclear and lacks any meaningful details.` 
+
+    can be removed entirely from the output. We don't want anything like that to appear in the cleaned summary, because it has no value. If that's all that's in the entire timestamped section, remove that section, do not output it.
+
+    Headings and timestamps that only contain a title (text between asterisks) and nothing else until the next timestamp, can be removed, as they have no value.
+
+    Again, our goal is to get to a clean, easily readable and digestable daily summary.
     """
 
     /// The instruction sent with the full summary. A blank stored prompt uses the built-in one.

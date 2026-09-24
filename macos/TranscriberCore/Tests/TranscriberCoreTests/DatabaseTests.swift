@@ -174,7 +174,8 @@ final class DatabaseTests: XCTestCase {
             systemPrompt: "Be brief.",
             replacements: [ReplacementRule(from: "Linz", to: "LIMS")],
             summarySystemPrompt: "Keep each stretch short.",
-            summaryPass2SystemPrompt: "Drop filler."
+            summaryPass2SystemPrompt: "Drop filler.",
+            actionItemsSystemPrompt: "Only commitments."
         )
         try ConfigStore.save(config, to: url)
         let loaded = try ConfigStore.load(from: url)
@@ -293,6 +294,16 @@ final class DatabaseTests: XCTestCase {
         XCTAssertEqual(stored?.generatedAt, "2026-09-24T00:00:01Z")
         XCTAssertEqual(stored?.updatedAt, "2026-09-24T12:00:00Z")
         XCTAssertEqual(try store.fetchDailySummaries().map(\.day), ["2026-09-23"])
+
+        try store.replaceDailySummary(
+            day: "2026-09-23",
+            text: "Regenerated",
+            timestamp: "2026-09-26T00:00:01Z"
+        )
+        let replaced = try store.fetchDailySummary(day: "2026-09-23")
+        XCTAssertEqual(replaced?.text, "Regenerated")
+        XCTAssertEqual(replaced?.generatedAt, "2026-09-26T00:00:01Z")
+        XCTAssertEqual(replaced?.updatedAt, "2026-09-26T00:00:01Z")
     }
 
     func testDaysFollowTheLocalCalendarRatherThanUTC() throws {

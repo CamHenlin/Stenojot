@@ -19,6 +19,7 @@
 		6393F2A43B43EAECEF9A7AD1 /* PythonEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CED4D940FAAF6F22DC9901 /* PythonEnvironment.swift */; };
 		684CC625CCE66F168C034CC0 /* TranscriberCore in Frameworks */ = {isa = PBXBuildFile; productRef = C052676A378C5BAE5149481C /* TranscriberCore */; };
 		7225D2A7D978399C09E16E71 /* LLMPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89603FFFD005555BC974C75B /* LLMPanel.swift */; };
+		79B1E533C54282A8E9BF04F7 /* ActionItemsSystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01185D635146EB0416472CC /* ActionItemsSystemPromptView.swift */; };
 		80BA80408DA3C9D57F7D9530 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8A30C01F0F54A0F3842F6A /* NoteTextEditor.swift */; };
 		9A998137F189709FE522F516 /* TranscriptSystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD86C8FD0F3AE1670093D3F6 /* TranscriptSystemPromptView.swift */; };
 		A6CDDD3FEC860D3B8EEE96F0 /* DailySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CF8F4B34F94F052373BCBE /* DailySummaryView.swift */; };
@@ -27,6 +28,7 @@
 		B4AE5490AF9F4981B9CD30A7 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = E16869C1503BB9B2ABC9DD90 /* MLXLLM */; };
 		BD9AA97FE077CF2E50B85122 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = 8FA28D1F118680AFE718F34B /* MLXHuggingFace */; };
 		C75F3BF8F6C22085A66B0EBD /* TranscriberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146354338DC6F72E875E81B /* TranscriberApp.swift */; };
+		DB137E7DB35A4E0AB9E4738F /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A9225D6E151DC21F42523C /* UpdateChecker.swift */; };
 		E598B852ADCF418C71F6C701 /* FirstLaunchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7A0DD12B3BA3170F3E5784 /* FirstLaunchView.swift */; };
 		E86783AA1544306EE38B44BA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 551A3EC3BF809490AF5838D6 /* ContentView.swift */; };
 		EA2A9D10078061D4351FDA70 /* AudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F802A5F540CABAE9E10B79D /* AudioCapture.swift */; };
@@ -48,6 +50,7 @@
 		53CF8F4B34F94F052373BCBE /* DailySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummaryView.swift; sourceTree = "<group>"; };
 		551A3EC3BF809490AF5838D6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6F802A5F540CABAE9E10B79D /* AudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCapture.swift; sourceTree = "<group>"; };
+		84A9225D6E151DC21F42523C /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		84E05E1B5E1B3DBF5426A592 /* TranscriberService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriberService.swift; sourceTree = "<group>"; };
 		89603FFFD005555BC974C75B /* LLMPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMPanel.swift; sourceTree = "<group>"; };
 		90C7FCF5D888C6693E323614 /* LocalLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
@@ -57,6 +60,7 @@
 		B1CED4D940FAAF6F22DC9901 /* PythonEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonEnvironment.swift; sourceTree = "<group>"; };
 		CF359800D0E885CE369D232E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		DA8A30C01F0F54A0F3842F6A /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
+		E01185D635146EB0416472CC /* ActionItemsSystemPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionItemsSystemPromptView.swift; sourceTree = "<group>"; };
 		E3FD755B49881FD81CD466B2 /* TranscriberCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TranscriberCore; path = TranscriberCore; sourceTree = SOURCE_ROOT; };
 		E859C74653BED382F8CAD80F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F855376E05A5005E61BA3C7B /* TranscriptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptListView.swift; sourceTree = "<group>"; };
@@ -93,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				A6733319057C64DF302CFCB8 /* ActionItemsPanel.swift */,
+				E01185D635146EB0416472CC /* ActionItemsSystemPromptView.swift */,
 				551A3EC3BF809490AF5838D6 /* ContentView.swift */,
 				53CF8F4B34F94F052373BCBE /* DailySummaryView.swift */,
 				FC7A0DD12B3BA3170F3E5784 /* FirstLaunchView.swift */,
@@ -121,6 +126,7 @@
 				5146354338DC6F72E875E81B /* TranscriberApp.swift */,
 				84E05E1B5E1B3DBF5426A592 /* TranscriberService.swift */,
 				4D7B68F314CCECAED00C562C /* TranscriptionLog.swift */,
+				84A9225D6E151DC21F42523C /* UpdateChecker.swift */,
 				60619869356171C1A98D1641 /* UI */,
 			);
 			path = Transcriber;
@@ -270,6 +276,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F653F63DDB987D009D9DB62B /* ActionItemsPanel.swift in Sources */,
+				79B1E533C54282A8E9BF04F7 /* ActionItemsSystemPromptView.swift in Sources */,
 				5DF1C39A49854C4A2554E9A0 /* AppModel.swift in Sources */,
 				EA2A9D10078061D4351FDA70 /* AudioCapture.swift in Sources */,
 				E86783AA1544306EE38B44BA /* ContentView.swift in Sources */,
@@ -290,6 +297,7 @@
 				11F1C2899E3A6430B7E11CC7 /* TranscriptListView.swift in Sources */,
 				9A998137F189709FE522F516 /* TranscriptSystemPromptView.swift in Sources */,
 				B1688E5FE404315F086D4066 /* TranscriptionLog.swift in Sources */,
+				DB137E7DB35A4E0AB9E4738F /* UpdateChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -68,6 +68,11 @@ final class ActionItemTests: XCTestCase {
         )
     }
 
+    func testStoredSystemPromptFallsBackToTheBuiltInText() {
+        XCTAssertEqual(ActionItems.systemPrompt(stored: "  "), ActionItems.systemPrompt)
+        XCTAssertEqual(ActionItems.systemPrompt(stored: "Only commitments."), "Only commitments.")
+    }
+
     func testUserPromptNamesSpeakers() {
         let prompt = ActionItems.userPrompt(transcriptions: [
             line(1, "2026-09-23T15:00:00Z", "I will send it", speaker: Speaker.you.rawValue),

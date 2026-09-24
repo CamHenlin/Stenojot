@@ -35,6 +35,10 @@ final class AppModel {
     var activityDetail: String?
     var setupError: String?
     var isListening = false
+    /// True while the engine is being prepared or the sidecar is launching.
+    var isPreparingTranscription = false
+    /// User preference for this launch. Starts on so transcription begins with the app.
+    private var transcriptionEnabled = true
     var isDatabaseReady = false
     var isLoading = false
     var showFirstLaunch = false
@@ -64,6 +68,7 @@ final class AppModel {
     var systemPromptSaved = false
     var summarySystemPromptSaved = false
     var summaryPass2SystemPromptSaved = false
+    var actionItemsSystemPromptSaved = false
     var llmDownloadingId: String?
     var llmDownloadFraction: Double?
     var llmDownloadError: String?
@@ -89,6 +94,8 @@ final class AppModel {
 
     var pinnedToBottom = true
     var scrollToken = 0
+    /// GitHub release page when a newer version has been found. Nil hides the toolbar button.
+    var updateReleaseURL: URL?
 
     private var store: TranscriptStore?
     private let pythonEnvironment = PythonEnvironment()
@@ -109,6 +116,7 @@ final class AppModel {
     private var savedTask: Task<Void, Never>?
     private var summaryPromptSavedTask: Task<Void, Never>?
     private var summaryPass2PromptSavedTask: Task<Void, Never>?
+    private var actionItemsPromptSavedTask: Task<Void, Never>?
     private var gapTask: Task<Void, Never>?
     private var extractTask: Task<Void, Never>?
     private var extractGeneration = 0
@@ -117,11 +125,14 @@ final class AppModel {
     private var dailySummaryTextByDay: [String: String] = [:]
     private var summaryQueue: [String] = []
     private var summaryManual: Set<String> = []
+    /// Days whose next run should replace a summary that is already saved.
+    private var summaryReplace: Set<String> = []
     private var summaryPump: Task<Void, Never>?
     private var summaryGeneration = 0
     private var midnightTask: Task<Void, Never>?
     private var wakeObserver: NSObjectProtocol?
     private var observedLocalDay: String?
+    private let updateChecker = UpdateChecker()
 
     var transcriptionCount: Int {
         items.reduce(0) { $0 + ($1.kind == .transcription ? 1 : 0) }
@@ -174,6 +185,7 @@ final class AppModel {
         guard !didStart else { return }
         didStart = true
         signal(SIGPIPE, SIG_IGN)
+        startUpdateChecks()
         wireTranscriber()
         do {
             try AppSupport.ensureDirectory()
@@ -202,6 +214,7 @@ final class AppModel {
     }
 
     func shutdown() {
+        updateChecker.stop()
         setupGeneration += 1
         pythonEnvironment.cancel()
         searchTask?.cancel()
@@ -216,6 +229,22 @@ final class AppModel {
         reloadGeneration += 1
         dbQueue.sync {}
         store = nil
+    }
+
+    func checkForUpdates() {
+        updateChecker.checkForUpdates()
+    }
+
+    func openUpdate() {
+        guard let updateReleaseURL else { return }
+        NSWorkspace.shared.open(updateReleaseURL)
+    }
+
+    private func startUpdateChecks() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        updateChecker.start(currentVersion: version) { [weak self] url in
+            self?.updateReleaseURL = url
+        }
     }
 
     func selectDate(_ date: String) {
@@ -454,6 +483,28 @@ final class AppModel {
         }
     }
 
+    /// Prompt shown in the action-item editor. A blank stored value is the built-in prompt.
+    var actionItemsSystemPromptText: String {
+        ActionItems.systemPrompt(stored: config.actionItemsSystemPrompt)
+    }
+
+    func saveActionItemsSystemPrompt(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        config.actionItemsSystemPrompt = trimmed == ActionItems.systemPrompt ? "" : trimmed
+        do {
+            try AppSupport.ensureDirectory()
+            try ConfigStore.save(config, to: AppSupport.configURL)
+            actionItemsSystemPromptSaved = true
+            actionItemsPromptSavedTask?.cancel()
+            actionItemsPromptSavedTask = Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                actionItemsSystemPromptSaved = false
+            }
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
     @discardableResult
     func saveReplacements(_ rules: [ReplacementRule]) throws -> [ReplacementRule] {
         let cleaned = ReplacementEngine.sanitized(rules)
@@ -647,9 +698,30 @@ final class AppModel {
         extractActionItemsIfNeeded()
     }
 
-    func restartTranscriber() {
+    var transcriptionRunning: Bool {
+        isListening || isPreparingTranscription
+    }
+
+    func startTranscription() {
+        transcriptionEnabled = true
         setupError = nil
         setupPythonAndListen()
+    }
+
+    func stopTranscription() {
+        transcriptionEnabled = false
+        setupGeneration += 1
+        pythonEnvironment.cancel()
+        transcriber.stop()
+        isPreparingTranscription = false
+        isListening = false
+        activityDetail = nil
+        setupError = nil
+        statusText = "Transcription stopped"
+    }
+
+    func restartTranscriber() {
+        startTranscription()
     }
 
     func promptImportDatabase() {
@@ -773,13 +845,21 @@ final class AppModel {
         store = nil
         isDatabaseReady = false
         isListening = false
+        isPreparingTranscription = false
     }
 
     private func setupPythonAndListen() {
+        guard transcriptionEnabled else {
+            isPreparingTranscription = false
+            isListening = false
+            statusText = "Transcription stopped"
+            return
+        }
         pythonEnvironment.cancel()
         setupGeneration += 1
         let generation = setupGeneration
         setupError = nil
+        isPreparingTranscription = true
         statusText = "Preparing transcription engine…"
         Task {
             do {
@@ -788,16 +868,18 @@ final class AppModel {
                     guard let self, generation == self.setupGeneration else { return }
                     self.activityDetail = line
                 }
-                guard generation == setupGeneration else { return }
+                guard generation == setupGeneration, transcriptionEnabled else { return }
                 self.activityDetail = nil
                 self.statusText = "Starting transcriber…"
                 await transcriber.start(python: BundledRuntime.venvPython, script: BundledRuntime.sidecarScript)
+                guard generation == setupGeneration, transcriptionEnabled else { return }
             } catch {
-                guard generation == setupGeneration else { return }
+                guard generation == setupGeneration, transcriptionEnabled else { return }
                 TranscriptionLog.error(error.localizedDescription)
                 setupError = error.localizedDescription
                 statusText = "Transcription engine failed"
                 isListening = false
+                isPreparingTranscription = false
             }
         }
     }
@@ -808,6 +890,7 @@ final class AppModel {
             let listening = text.hasPrefix("Listening")
             self?.isListening = listening
             if listening {
+                self?.isPreparingTranscription = false
                 self?.activityDetail = nil
                 self?.setupError = nil
             }
@@ -819,6 +902,7 @@ final class AppModel {
         transcriber.onFailure = { [weak self] message in
             self?.statusText = message
             self?.isListening = false
+            self?.isPreparingTranscription = false
         }
         transcriber.onTranscription = { [weak self] text, raw, timestamp, speaker in
             self?.ingest(text: text, rawOutput: raw, timestamp: timestamp, speaker: speaker)
@@ -1169,7 +1253,7 @@ final class AppModel {
                     let user = ActionItems.userPrompt(transcriptions: segment)
                     for try await chunk in localLLM.stream(
                         modelId: modelId,
-                        system: ActionItems.systemPrompt,
+                        system: ActionItems.systemPrompt(stored: config.actionItemsSystemPrompt),
                         user: user
                     ) {
                         guard actionItemExtractionIsCurrent(generation) else { return }
@@ -1268,6 +1352,11 @@ final class AppModel {
         enqueueDailySummary(day: day, manual: true)
     }
 
+    /// Runs the summary again and replaces the one already saved for this day.
+    func regenerateDailySummary(day: String) {
+        enqueueDailySummary(day: day, manual: true, replace: true)
+    }
+
     func saveDailySummary(day: String, text: String) {
         guard let store else { return }
         let timestamp = Timestamp.nowISO8601()
@@ -1353,10 +1442,11 @@ final class AppModel {
         }
     }
 
-    private func enqueueDailySummary(day: String, manual: Bool) {
-        if dailySummaryTextByDay[day] != nil { return }
+    private func enqueueDailySummary(day: String, manual: Bool, replace: Bool = false) {
+        if !replace && dailySummaryTextByDay[day] != nil { return }
         if summaryQueue.contains(day) || generatingSummaryDay == day {
             if manual { summaryManual.insert(day) }
+            if replace { summaryReplace.insert(day) }
             return
         }
         if manual && !llmAvailable {
@@ -1368,6 +1458,7 @@ final class AppModel {
         }
         if !manual && !llmAvailable { return }
         if manual { summaryManual.insert(day) }
+        if replace { summaryReplace.insert(day) }
         summaryQueue.append(day)
         if manual && summaryQueue.count == 1 && generatingSummaryDay == nil {
             let loading = config.localModelId.map { !localLLM.isLoaded($0) } ?? false
@@ -1387,14 +1478,15 @@ final class AppModel {
         while !Task.isCancelled, !summaryQueue.isEmpty {
             let day = summaryQueue.removeFirst()
             let manual = summaryManual.remove(day) != nil
-            await performDailySummary(day: day, manual: manual)
+            let replace = summaryReplace.remove(day) != nil
+            await performDailySummary(day: day, manual: manual, replace: replace)
         }
         if !Task.isCancelled {
             summaryPump = nil
         }
     }
 
-    private func performDailySummary(day: String, manual: Bool) async {
+    private func performDailySummary(day: String, manual: Bool, replace: Bool) async {
         let generation = summaryGeneration
         guard summaryIsCurrent(generation) else { return }
         guard llmAvailable, let modelId = config.localModelId else {
@@ -1424,7 +1516,7 @@ final class AppModel {
             endDailySummaryUI(generation)
             return
         }
-        if let existing = job.existing {
+        if let existing = job.existing, !replace {
             rememberDailySummary(day: existing.day, text: existing.text)
             endDailySummaryUI(generation)
             return
@@ -1501,11 +1593,10 @@ final class AppModel {
             return
         }
         do {
-            let inserted = try await insertGeneratedDailySummary(
-                day: day,
-                text: text,
-                timestamp: Timestamp.nowISO8601()
-            )
+            let timestamp = Timestamp.nowISO8601()
+            let inserted = replace
+                ? try await replaceGeneratedDailySummary(day: day, text: text, timestamp: timestamp)
+                : try await insertGeneratedDailySummary(day: day, text: text, timestamp: timestamp)
             guard summaryIsCurrent(generation) else {
                 endDailySummaryUI(generation)
                 return
@@ -1658,6 +1749,7 @@ final class AppModel {
         summaryPump = nil
         summaryQueue.removeAll()
         summaryManual.removeAll()
+        summaryReplace.removeAll()
         generatingSummaryDay = nil
         summaryStreamText = ""
         summaryLoadingModel = false
@@ -1705,6 +1797,21 @@ final class AppModel {
                 do {
                     let inserted = try store.insertDailySummaryIfAbsent(day: day, text: text, timestamp: timestamp)
                     continuation.resume(returning: inserted)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// True when the replacement was written. A missing store leaves the previous summary in place.
+    private func replaceGeneratedDailySummary(day: String, text: String, timestamp: String) async throws -> Bool {
+        guard let store else { return false }
+        return try await withCheckedThrowingContinuation { continuation in
+            dbQueue.async {
+                do {
+                    try store.replaceDailySummary(day: day, text: text, timestamp: timestamp)
+                    continuation.resume(returning: true)
                 } catch {
                     continuation.resume(throwing: error)
                 }

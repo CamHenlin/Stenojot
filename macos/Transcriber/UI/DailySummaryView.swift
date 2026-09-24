@@ -6,6 +6,7 @@ struct DailySummaryView: View {
     var day: String
     @State private var text = ""
     @State private var savedText = ""
+    @State private var confirmRegenerate = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,8 +20,25 @@ struct DailySummaryView: View {
         .onChange(of: model.dailySummaryRevision) { _, _ in
             pullSummary()
         }
-        .onChange(of: model.generatingSummaryDay) { _, _ in
-            if !isGenerating { pullSummary() }
+        .onChange(of: model.generatingSummaryDay) { _, generating in
+            if generating == day {
+                text = ""
+                savedText = ""
+            } else if !isGenerating {
+                pullSummary()
+            }
+        }
+        .confirmationDialog(
+            "Regenerate this summary?",
+            isPresented: $confirmRegenerate,
+            titleVisibility: .visible
+        ) {
+            Button("Regenerate", role: .destructive) {
+                model.regenerateDailySummary(day: day)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The summary for this day is replaced, including any unsaved edits. Change the system prompt first if you want a different result.")
         }
     }
 
@@ -30,6 +48,10 @@ struct DailySummaryView: View {
 
     private var showsSave: Bool {
         !isGenerating && model.hasDailySummary(day) && text != savedText
+    }
+
+    private var showsRegenerate: Bool {
+        model.hasDailySummary(day) && !model.isDailySummaryBusy(day)
     }
 
     private var header: some View {
@@ -43,6 +65,12 @@ struct DailySummaryView: View {
                         .foregroundStyle(Theme.muted)
                 }
                 Spacer()
+                if showsRegenerate {
+                    Button("Regenerate") {
+                        confirmRegenerate = true
+                    }
+                    .disabled(model.isDailySummaryBusy(day))
+                }
                 if showsSave {
                     Button("Save") {
                         model.saveDailySummary(day: day, text: text)
@@ -60,6 +88,12 @@ struct DailySummaryView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.top, 12)
+            } else if let status = failureStatus {
+                Text(status)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 12)
             }
         }
         .padding(16)
@@ -69,6 +103,12 @@ struct DailySummaryView: View {
     private var generationProgress: String? {
         guard isGenerating, let progress = model.summaryProgress, !progress.isEmpty else { return nil }
         return progress
+    }
+
+    /// Shown when a regenerate fails and the previous summary is still on screen.
+    private var failureStatus: String? {
+        guard model.summaryStatusDay == day, let status = model.summaryStatus, !status.isEmpty else { return nil }
+        return status
     }
 
     @ViewBuilder

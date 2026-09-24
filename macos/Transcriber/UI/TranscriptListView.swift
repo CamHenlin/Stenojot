@@ -23,6 +23,14 @@ struct TranscriptDetailView: View {
         .navigationTitle(model.toolbarTitle)
         .navigationSubtitle(statusSubtitle)
         .toolbar {
+            if model.updateReleaseURL != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Update available") {
+                        model.openUpdate()
+                    }
+                    .help("A newer version is on GitHub")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Text(messageCountLabel)
                     .font(.caption)
@@ -30,9 +38,16 @@ struct TranscriptDetailView: View {
                     .monospacedDigit()
             }
             .plainToolbarBackground()
-            if showRestart {
+            if model.isDatabaseReady {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Restart") { model.restartTranscriber() }
+                    Button(model.transcriptionRunning ? "Stop" : "Start") {
+                        if model.transcriptionRunning {
+                            model.stopTranscription()
+                        } else {
+                            model.startTranscription()
+                        }
+                    }
+                    .help(model.transcriptionRunning ? "Stop transcription" : "Start transcription")
                 }
             }
             if model.isDatabaseReady {
@@ -46,9 +61,6 @@ struct TranscriptDetailView: View {
                     .help(model.actionItemsOpen ? "Hide action items" : "Show action items")
                 }
                 .plainToolbarBackground()
-            }
-            ToolbarItem(placement: .primaryAction) {
-                SettingsButton(model: model)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -82,16 +94,6 @@ struct TranscriptDetailView: View {
     private var statusSubtitle: Text {
         Text(statusLine)
             .foregroundStyle(model.isListening ? Color.green : Theme.muted)
-    }
-
-    private var showRestart: Bool {
-        guard model.isDatabaseReady, !model.isListening else { return false }
-        let status = model.statusText
-        return model.setupError != nil
-            || status.contains("exited")
-            || status.contains("failed")
-            || status.contains("Microphone")
-            || status.contains("not available")
     }
 
     private var statusLine: String {
@@ -183,24 +185,6 @@ struct TranscriptDetailView: View {
         .padding(12)
         .background(Theme.panel)
         .overlay(alignment: .top) { Theme.line.frame(height: 1) }
-    }
-}
-
-private struct SettingsButton: View {
-    @Bindable var model: AppModel
-    @State private var open = false
-
-    var body: some View {
-        Button {
-            open = true
-        } label: {
-            Image(systemName: "gearshape")
-        }
-        .buttonStyle(.borderless)
-        .help("Text replacements")
-        .sheet(isPresented: $open) {
-            SettingsView(model: model)
-        }
     }
 }
 
@@ -411,16 +395,23 @@ struct TranscriptRow: View {
             }
             .padding(.vertical, 4)
         } else {
-            Button {
-                model.inlineInsert = insert
-                model.inlineText = ""
-            } label: {
-                Text(hovering ? "Add note" : " ")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.muted)
-                    .frame(maxWidth: .infinity, minHeight: 10, alignment: .leading)
+            // Keep a thin hover target between messages. The bordered button only
+            // takes its full height while the pointer is over the row, so the
+            // transcript stays compact the rest of the time.
+            HStack {
+                Button("Add note") {
+                    model.inlineInsert = insert
+                    model.inlineText = ""
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .opacity(hovering ? 1 : 0)
+                .allowsHitTesting(hovering)
+                .accessibilityHidden(!hovering)
+                .help("Insert a note here")
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
+            .frame(height: hovering ? nil : 8)
         }
     }
 }

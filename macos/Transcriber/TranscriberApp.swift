@@ -25,12 +25,17 @@ struct TranscriberApp: App {
         .defaultSize(width: 1280, height: 760)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates") { model.checkForUpdates() }
+            }
             InspectorCommands()
             CommandGroup(after: .appSettings) {
                 Button("LLM Settings…") { openWindow(id: AppWindow.llmSettings) }
                     .keyboardShortcut("l", modifiers: [.command, .shift])
+                Button("Text Replacement Settings…") { openWindow(id: AppWindow.textReplacements) }
                 Menu("System Prompt") {
                     Button("Transcript…") { openWindow(id: AppWindow.transcriptPrompt) }
+                    Button("Action Items…") { openWindow(id: AppWindow.actionItemsPrompt) }
                     Button("Summary…") { openWindow(id: AppWindow.summaryPrompt) }
                     Button("Summary Pass 2…") { openWindow(id: AppWindow.summaryPass2Prompt) }
                 }
@@ -47,8 +52,20 @@ struct TranscriberApp: App {
         }
         .defaultSize(width: 640, height: 560)
 
+        Window("Text Replacement Settings", id: AppWindow.textReplacements) {
+            SettingsView(model: model)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 640, height: 420)
+
         Window("Transcript System Prompt", id: AppWindow.transcriptPrompt) {
             TranscriptSystemPromptView(model: model)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 640, height: 480)
+
+        Window("Action Items System Prompt", id: AppWindow.actionItemsPrompt) {
+            ActionItemsSystemPromptView(model: model)
                 .preferredColorScheme(.dark)
         }
         .defaultSize(width: 640, height: 480)
@@ -77,7 +94,9 @@ struct TranscriberApp: App {
 
 enum AppWindow {
     static let llmSettings = "llm-settings"
+    static let textReplacements = "text-replacements"
     static let transcriptPrompt = "transcript-system-prompt"
+    static let actionItemsPrompt = "action-items-system-prompt"
     static let summaryPrompt = "summary-system-prompt"
     static let summaryPass2Prompt = "summary-pass-2-system-prompt"
     static let dailySummary = "daily-summary"

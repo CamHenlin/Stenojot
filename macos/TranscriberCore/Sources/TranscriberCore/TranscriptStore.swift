@@ -185,6 +185,20 @@ public final class TranscriptStore: @unchecked Sendable {
         }
     }
 
+    /// Writes a newly generated summary, replacing one already stored for that day.
+    public func replaceDailySummary(day: String, text: String, timestamp: String) throws {
+        try pool.write { db in
+            try db.execute(sql: """
+            INSERT INTO daily_summaries (day, text, generated_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(day) DO UPDATE SET
+                text = excluded.text,
+                generated_at = excluded.generated_at,
+                updated_at = excluded.updated_at
+            """, arguments: [day, text, timestamp, timestamp])
+        }
+    }
+
     public func fetchActionItems() throws -> [ActionItem] {
         try pool.read { db in
             let items = try ActionItem.fetchAll(

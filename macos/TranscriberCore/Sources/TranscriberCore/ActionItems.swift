@@ -23,6 +23,13 @@ public enum ActionItems {
     Do not add commentary, markdown, or keys. Example: ["Send the revised deck", "Call Priya about the contract"]
     """
 
+    /// The instruction sent with a finished transcript segment. A blank stored prompt uses the built-in one.
+    public static func systemPrompt(stored: String) -> String {
+        let trimmed = stored.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return systemPrompt }
+        return trimmed
+    }
+
     /// Splits transcriptions into runs. A new run starts when consecutive timestamps are at least `gap` seconds apart.
     public static func segments(
         _ rows: [TranscriptionRow],

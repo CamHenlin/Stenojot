@@ -34,6 +34,8 @@ xcodebuild \
 STAGED="$(mktemp -d)/Stenojot.app"
 ditto --norsrc "$APP" "$STAGED"
 xattr -cr "$STAGED" || true
+VERSION="${TAG#v}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$STAGED/Contents/Info.plist"
 codesign --force --deep --sign - "$STAGED"
 codesign --verify --deep --strict "$STAGED"
 
