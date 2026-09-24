@@ -3,7 +3,7 @@
 # Ad-hoc signatures ("-") change cdhash every build, and macOS then treats the app as a new binary.
 set -euo pipefail
 
-IDENTITY="ParakeetTranscriberDev"
+IDENTITY="StenojotDev"
 KEYCHAIN="${SRCROOT:-$(cd "$(dirname "$0")/.." && pwd)}/.codesign/codesign.keychain-db"
 PASSWORD="parakeet-local-codesign"
 
@@ -40,11 +40,24 @@ EOF
   security import "$work/cert.p12" -k "$KEYCHAIN" -P "$PASSWORD" \
     -T /usr/bin/codesign -T /usr/bin/security >/dev/null
   security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$PASSWORD" "$KEYCHAIN" >/dev/null
+  # Xcode only offers identities that are valid for the code signing policy.
+  # A new self-signed cert stays "not trusted" until this trust setting exists.
+  security add-trusted-cert -r trustRoot -p codeSign "$work/cert.pem"
   rm -rf "$work"
   trap - EXIT
 fi
 
 security unlock-keychain -p "$PASSWORD" "$KEYCHAIN"
+
+# Xcode's signing check looks in the login keychain, not the local one.
+LOGIN="${HOME}/Library/Keychains/login.keychain-db"
+if [[ -f "$LOGIN" ]] && ! security find-identity -v -p codesigning "$LOGIN" 2>/dev/null | grep -q "\"$IDENTITY\""; then
+  exported=$(mktemp -d)
+  security export -k "$KEYCHAIN" -t identities -f pkcs12 -P "$PASSWORD" -o "$exported/id.p12"
+  security import "$exported/id.p12" -k "$LOGIN" -P "$PASSWORD" -f pkcs12 -A \
+    -T /usr/bin/codesign -T /usr/bin/security >/dev/null
+  rm -rf "$exported"
+fi
 
 paths=()
 found=0

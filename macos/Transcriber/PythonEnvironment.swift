@@ -71,6 +71,9 @@ final class PythonEnvironment: @unchecked Sendable {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
+        var environment = ProcessInfo.processInfo.environment
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        process.environment = environment
         process.standardOutput = pipe
         process.standardError = pipe
         remember(process)

@@ -1,4 +1,4 @@
-# Parakeet Transcriber
+# Stenojot
 
 ## About
 
@@ -11,13 +11,15 @@ I wanted a transcription tool that stayed on my computer and was still useful af
 - Use a local language model to write a summary of the day
 - Ask that same model questions about part of a transcript, or about the whole day
 
-Nothing I found did all of that together, so I built Parakeet Transcriber.
+Nothing I found did all of that together, so I built Stenojot.
+
+The name is steno and jot. Steno is shorthand for writing down what was said. Jot is the note that stays with it. The speech model inside the app is still NVIDIA Parakeet. That name is the model, not the app.
 
 ## Download
 
-[Download Parakeet Transcriber](https://github.com/CamHenlin/Transcriber/releases/latest/download/ParakeetTranscriber.zip) for an Apple Silicon Mac on macOS 14 or later.
+[Download Stenojot](https://github.com/CamHenlin/Transcriber/releases/latest/download/Stenojot.zip) for an Apple Silicon Mac on macOS 14 or later.
 
-Unzip it and move **Parakeet Transcriber** to Applications. The first time you open it, Control-click the app and choose Open, then Open again. macOS does not recognize this copy's signature, so a normal double-click stays blocked until you do that.
+Unzip it and move **Stenojot** to Applications. The first time you open it, Control-click the app and choose Open, then Open again. macOS does not recognize this copy's signature, so a normal double-click stays blocked until you do that.
 
 The zip does not include the transcription packages or the model weights. Those download on first launch.
 
@@ -102,22 +104,22 @@ It is a Mac app. It listens while you talk, writes the transcript down as you go
 
 ## Build and run
 
-Open [macos/ParakeetTranscriber.xcodeproj](macos/ParakeetTranscriber.xcodeproj) and run the Parakeet Transcriber scheme.
+Open [macos/Stenojot.xcodeproj](macos/Stenojot.xcodeproj) and run the Stenojot scheme.
 
 The first build does two setup steps:
 
-1. [macos/Scripts/ensure-codesign-identity.sh](macos/Scripts/ensure-codesign-identity.sh) creates a local code-signing identity named `ParakeetTranscriberDev` in `macos/.codesign/` (gitignored). Screen Recording permission is tied to the signature. A stable identity means a rebuild does not look like a new app to macOS. Delete that keychain and macOS will ask for microphone and system audio again.
+1. [macos/Scripts/ensure-codesign-identity.sh](macos/Scripts/ensure-codesign-identity.sh) creates a local code-signing identity named `StenojotDev` in `macos/.codesign/` (gitignored). Screen Recording permission is tied to the signature. A stable identity means a rebuild does not look like a new app to macOS. Delete that keychain and macOS will ask for microphone and system audio again.
 2. [macos/Scripts/prepare-python.sh](macos/Scripts/prepare-python.sh) downloads CPython 3.12 from [python-build-standalone](https://github.com/astral-sh/python-build-standalone) into `macos/Vendor/` (gitignored). [macos/Scripts/bundle-resources.sh](macos/Scripts/bundle-resources.sh) copies that runtime, [sidecar/transcriber.py](sidecar/transcriber.py), and [sidecar/requirements-app.txt](sidecar/requirements-app.txt) into the app. Later builds reuse the download.
 
 From the command line:
 
 ```bash
-xcodebuild -project macos/ParakeetTranscriber.xcodeproj -scheme ParakeetTranscriber -configuration Debug build
+xcodebuild -project macos/Stenojot.xcodeproj -scheme Stenojot -configuration Debug build
 ```
 
-The product is `Parakeet Transcriber.app`. Copy it to `/Applications` when you want it there. The Python virtualenv records the path of the bundled interpreter. Move the app after that environment exists and the next launch rebuilds it.
+The product is `Stenojot.app`. Copy it to `/Applications` when you want it there. The Python virtualenv records the path of the bundled interpreter. Move the app after that environment exists and the next launch rebuilds it.
 
-To publish a downloadable build, tag a Release and upload a zip named `ParakeetTranscriber.zip`. The README link always points at that file on the latest release:
+To publish a downloadable build, tag a Release and upload a zip named `Stenojot.zip`. The README link always points at that file on the latest release:
 
 ```bash
 macos/Scripts/release.sh v1.0.0
@@ -137,8 +139,8 @@ cd macos && xcodegen generate
 
 ## First launch
 
-1. Launch Parakeet Transcriber.
-2. Choose an existing `transcriptions.db`, or click Start Empty. Import uses a SQLite backup, so the `-wal` file is included. The copy lives at `~/Library/Application Support/Parakeet Transcriber/transcriptions.db`. The original file stays where it was.
+1. Launch Stenojot.
+2. Choose an existing `transcriptions.db`, or click Start Empty. Import uses a SQLite backup, so the `-wal` file is included. The copy lives at `~/Library/Application Support/Stenojot/transcriptions.db`. The original file stays where it was.
 3. Optionally choose an existing `config.json` in the same sheet. A new install starts with an empty replacement list.
 4. Allow the microphone, then allow system audio recording so the other person on a call is transcribed separately.
 5. Wait for the one-time `pip install` of `parakeet-mlx` and `numpy`. The Parakeet weights stay in the Hugging Face cache (`~/.cache/huggingface`). The first sidecar launch downloads `mlx-community/parakeet-tdt-0.6b-v2` if it is not already there.
@@ -165,7 +167,7 @@ A lone "Yeah" after more than 30 seconds of silence is dropped. Parakeet often h
 
 ### Language model
 
-The app runs a language model in-process with MLX. Choose a model from LLM Settings in the menu bar (⇧⌘L). Weights download once into `~/Library/Application Support/Parakeet Transcriber/models/` and stay there after you quit. Open the LLM panel at the bottom of the transcript to ask about the day.
+The app runs a language model in-process with MLX. Choose a model from LLM Settings in the menu bar (⇧⌘L). Weights download once into `~/Library/Application Support/Stenojot/models/` and stay there after you quit. Open the LLM panel at the bottom of the transcript to ask about the day.
 
 | Model | Hugging Face id | Download | Memory while loaded |
 |---|---|---|---|
@@ -194,10 +196,10 @@ The instruction for each stretch is edited from System Prompt > Summary… in th
 
 ### Logs
 
-Transcription logs go to the macOS unified log. In Console.app, filter on subsystem `com.parakeet.transcriber`, or from Terminal:
+Transcription logs go to the macOS unified log. In Console.app, filter on subsystem `com.stenojot.app`, or from Terminal:
 
 ```bash
-log stream --predicate 'subsystem == "com.parakeet.transcriber"' --level info
+log stream --predicate 'subsystem == "com.stenojot.app"' --level info
 ```
 
 That stream includes Python setup, model download progress, voice detection, and each transcribed line.
@@ -226,7 +228,7 @@ The sidecar keeps a separate energy-based voice detector for each speaker. It ca
 ```
 ├── macos/
 │   ├── project.yml                  # XcodeGen spec
-│   ├── ParakeetTranscriber.xcodeproj
+│   ├── Stenojot.xcodeproj
 │   ├── Scripts/
 │   │   ├── ensure-codesign-identity.sh
 │   │   ├── prepare-python.sh
@@ -248,7 +250,7 @@ Swift packages, pinned in [macos/project.yml](macos/project.yml) and [macos/Tran
 
 ## Data on disk
 
-Everything the app writes lives under `~/Library/Application Support/Parakeet Transcriber/`:
+Everything the app writes lives under `~/Library/Application Support/Stenojot/`:
 
 | Path | Contents |
 |---|---|

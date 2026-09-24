@@ -13,7 +13,7 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Parakeet Transcriber</string>
+	<string>Stenojot</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>CFBundlePackageType</key>
@@ -27,11 +27,11 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Parakeet Transcriber listens to the microphone so it can transcribe the person at this Mac.</string>
+	<string>Stenojot listens to the microphone so it can transcribe the person at this Mac.</string>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>Parakeet Transcriber listens to audio playing on this Mac so it can transcribe the other person on a call.</string>
+	<string>Stenojot listens to audio playing on this Mac so it can transcribe the other person on a call.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>Parakeet Transcriber listens to audio playing on this Mac so it can transcribe the other person on a call.</string>
+	<string>Stenojot listens to audio playing on this Mac so it can transcribe the other person on a call.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

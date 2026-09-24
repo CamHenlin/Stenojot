@@ -33,23 +33,42 @@ struct DailySummaryView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Daily summary")
-                    .font(.headline)
-                Text(Timestamp.formatLongDate(day))
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-            }
-            Spacer()
-            if showsSave {
-                Button("Save") {
-                    model.saveDailySummary(day: day, text: text)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Daily summary")
+                        .font(.headline)
+                    Text(Timestamp.formatLongDate(day))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
                 }
-                .keyboardShortcut("s", modifiers: .command)
+                Spacer()
+                if showsSave {
+                    Button("Save") {
+                        model.saveDailySummary(day: day, text: text)
+                    }
+                    .keyboardShortcut("s", modifiers: .command)
+                }
+            }
+            if let progress = generationProgress {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(progress)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 12)
             }
         }
         .padding(16)
+    }
+
+    /// Status for this day's generation. Other days in the queue keep their own waiting state.
+    private var generationProgress: String? {
+        guard isGenerating, let progress = model.summaryProgress, !progress.isEmpty else { return nil }
+        return progress
     }
 
     @ViewBuilder
@@ -76,12 +95,7 @@ struct DailySummaryView: View {
     }
 
     private var streamText: String {
-        if model.summaryLoadingModel && model.summaryStreamText.isEmpty {
-            return "Loading the model…"
-        }
-        if model.summaryStreamText.isEmpty {
-            return "Reading the day's transcripts…"
-        }
+        guard !model.summaryStreamText.isEmpty else { return "" }
         return model.summaryStreamText + " ▍"
     }
 

@@ -1,4 +1,4 @@
-name: ParakeetTranscriber
+name: Stenojot
 options:
   createIntermediateGroups: true
   deploymentTarget:
@@ -6,7 +6,7 @@ options:
 settings:
   base:
     ARCHS: arm64
-    CODE_SIGN_IDENTITY: ParakeetTranscriberDev
+    CODE_SIGN_IDENTITY: StenojotDev
     # Search this keychain for the identity created by ensure-codesign-identity.sh.
     OTHER_CODE_SIGN_FLAGS: "--keychain $(SRCROOT)/.codesign/codesign.keychain-db"
     CODE_SIGN_STYLE: Manual
@@ -34,6 +34,7 @@ targets:
   Transcriber:
     type: application
     platform: macOS
+    productName: Stenojot
     sources:
       - path: Transcriber
         excludes:
@@ -56,8 +57,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: ""
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Transcriber/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.parakeet.transcriber
-        PRODUCT_NAME: Parakeet Transcriber
+        PRODUCT_BUNDLE_IDENTIFIER: com.stenojot.app
+        PRODUCT_NAME: Stenojot
     preBuildScripts:
       - path: Scripts/ensure-codesign-identity.sh
         name: Stable code signing identity
@@ -68,7 +69,7 @@ targets:
         name: Bundle Python and sidecar
         basedOnDependencyAnalysis: false
 schemes:
-  ParakeetTranscriber:
+  Stenojot:
     build:
       targets:
         Transcriber: all

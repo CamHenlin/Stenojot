@@ -77,6 +77,8 @@ final class AppModel {
     var generatingSummaryDay: String?
     var summaryStreamText = ""
     var summaryLoadingModel = false
+    /// Live line for the open summary window: which stretch is in progress, or that the second pass is running.
+    var summaryProgress: String?
     var summaryStatusDay: String?
     var summaryStatus: String?
     /// Bumped when a day's saved summary text changes, so an open summary window can refresh.
@@ -1537,8 +1539,13 @@ final class AppModel {
         var sections: [String] = []
         for (offset, stretch) in stretches.enumerated() {
             guard summaryIsCurrent(generation) else { return sections }
+            let index = offset + 1
+            let count = stretches.count
+            if !summaryLoadingModel {
+                summaryProgress = stretchProgress(index: index, count: count)
+            }
             let heading = DailySummaryDocument.heading(for: stretch)
-            let user = DailySummaryDocument.chunkPrompt(stretch, index: offset + 1, count: stretches.count)
+            let user = DailySummaryDocument.chunkPrompt(stretch, index: index, count: count)
             var piece = ""
             for try await token in localLLM.stream(
                 modelId: modelId,
@@ -1548,13 +1555,12 @@ final class AppModel {
             ) {
                 guard summaryIsCurrent(generation) else { return sections }
                 summaryLoadingModel = false
+                summaryProgress = stretchProgress(index: index, count: count)
                 piece += token
                 summaryStreamText = liveSummary(
                     finished: sections,
                     heading: heading,
-                    partial: piece,
-                    index: offset + 1,
-                    count: stretches.count
+                    partial: piece
                 )
             }
             let summary = piece.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1573,8 +1579,8 @@ final class AppModel {
         generation: Int
     ) async throws -> String? {
         guard summaryIsCurrent(generation) else { return nil }
+        summaryProgress = "Second pass"
         var piece = ""
-        summaryStreamText = "Cleaning the summary\n\n"
         for try await token in localLLM.stream(
             modelId: modelId,
             system: DailySummaryDocument.cleanupSystemPrompt(stored: config.summaryPass2SystemPrompt),
@@ -1584,7 +1590,7 @@ final class AppModel {
             guard summaryIsCurrent(generation) else { return nil }
             summaryLoadingModel = false
             piece += token
-            summaryStreamText = "Cleaning the summary\n\n\(piece)"
+            summaryStreamText = piece
         }
         guard summaryIsCurrent(generation) else { return nil }
         let cleaned = piece.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1594,14 +1600,16 @@ final class AppModel {
         return cleaned
     }
 
+    private func stretchProgress(index: Int, count: Int) -> String {
+        "Summarizing stretch \(index) of \(count)"
+    }
+
     private func liveSummary(
         finished: [String],
         heading: String,
-        partial: String,
-        index: Int,
-        count: Int
+        partial: String
     ) -> String {
-        var text = "Summarizing \(index) of \(count)\n\n"
+        var text = ""
         if !finished.isEmpty {
             text += finished.joined(separator: "\n\n")
             text += "\n\n"
@@ -1616,6 +1624,7 @@ final class AppModel {
         generatingSummaryDay = day
         summaryStreamText = ""
         summaryLoadingModel = loadingModel
+        summaryProgress = loadingModel ? "Loading the model…" : "Reading the day's transcripts…"
     }
 
     private func endDailySummaryUI(_ generation: Int) {
@@ -1623,6 +1632,7 @@ final class AppModel {
         generatingSummaryDay = nil
         summaryStreamText = ""
         summaryLoadingModel = false
+        summaryProgress = nil
     }
 
     private func failDailySummary(day: String, message: String) {
@@ -1651,6 +1661,7 @@ final class AppModel {
         generatingSummaryDay = nil
         summaryStreamText = ""
         summaryLoadingModel = false
+        summaryProgress = nil
         summaryStatus = nil
         summaryStatusDay = nil
     }

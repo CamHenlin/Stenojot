@@ -1,4 +1,5 @@
 import AppKit
+import CoreServices
 import Darwin
 import ObjectiveC
 import SwiftUI
@@ -10,6 +11,9 @@ struct TranscriberApp: App {
     @State private var model = AppModel()
 
     init() {
+        // Xcode runs the binary directly, so Launch Services has no record.
+        // TCC will not list the app for screen recording without one.
+        _ = LSRegisterURL(Bundle.main.bundleURL as CFURL, true)
         TableViewClickFix.install()
     }
 

@@ -40,6 +40,9 @@ final class SidecarProcess: @unchecked Sendable {
     private func sidecarEnvironment() -> [String: String] {
         var environment = ProcessInfo.processInfo.environment
         environment["PYTHONUNBUFFERED"] = "1"
+        // Bytecode written next to the bundled stdlib changes the signed app,
+        // and macOS then omits it from Screen & System Audio Recording.
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
         let metalKeys = environment.keys.filter { $0.hasPrefix("MTL_") || $0.hasPrefix("METAL_") }
         for key in metalKeys {
             environment.removeValue(forKey: key)

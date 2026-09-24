@@ -27,7 +27,7 @@ final class TranscriberService {
         let granted = await Self.requestMicrophone()
         guard token == generation else { return }
         guard granted else {
-            let message = "Microphone access is off. Enable it for Parakeet Transcriber in System Settings."
+            let message = "Microphone access is off. Enable it for Stenojot in System Settings."
             TranscriptionLog.error(message)
             onFailure(message)
             return
@@ -138,7 +138,7 @@ final class TranscriberService {
     static func systemAudioStatus(for message: String) -> String {
         let lowered = message.lowercased()
         if lowered.contains("declined") || lowered.contains("tcc") || lowered.contains("authoriz") {
-            return "Listening to you only. Turn Parakeet Transcriber off and on in System Settings → Screen & System Audio Recording, then relaunch."
+            return "Listening to you only. Turn Stenojot off and on in System Settings → Screen & System Audio Recording, then relaunch."
         }
         return "Listening to you only. System audio failed: \(message)"
     }

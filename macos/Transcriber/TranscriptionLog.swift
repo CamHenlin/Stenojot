@@ -1,9 +1,9 @@
 import OSLog
 
 /// Unified logging for the transcription engine. Visible in Console.app
-/// under subsystem `com.parakeet.transcriber`.
+/// under subsystem `com.stenojot.app`.
 enum TranscriptionLog {
-    static let logger = Logger(subsystem: "com.parakeet.transcriber", category: "transcription")
+    static let logger = Logger(subsystem: "com.stenojot.app", category: "transcription")
 
     static func info(_ message: String) {
         logger.info("\(message, privacy: .public)")

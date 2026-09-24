@@ -12,7 +12,7 @@ struct FirstLaunchView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Import your transcripts")
                 .font(.title2.weight(.semibold))
-            Text("Parakeet Transcriber keeps its own copy of the database. Import the existing transcriptions.db, and optionally config.json, or start with an empty database.")
+            Text("Stenojot keeps its own copy of the database. Import the existing transcriptions.db, and optionally config.json, or start with an empty database.")
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
