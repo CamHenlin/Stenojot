@@ -1,8 +1,8 @@
 import Foundation
 
-/// Drops a lone "Yeah" that Parakeet hears in dings and other background noise.
-public enum LoneYeahFilter {
-    /// A "Yeah" that arrives after more than this much silence is treated as noise.
+/// Drops a lone "Yeah" or "Okay" that Parakeet hears in dings and other background noise.
+public enum NoiseWordFilter {
+    /// One of these words, arriving after more than this much silence, is treated as noise.
     public static let pauseThreshold: TimeInterval = 30
 
     public static func shouldDrop(
@@ -11,8 +11,8 @@ public enum LoneYeahFilter {
         previousTimestamp: String?,
         timestamp: String
     ) -> Bool {
-        guard isLoneYeah(text) else { return false }
-        if let previousText, isLoneYeah(previousText) {
+        guard let word = noiseWord(text) else { return false }
+        if let previousText, noiseWord(previousText) == word {
             return true
         }
         guard let previousTimestamp,
@@ -23,10 +23,19 @@ public enum LoneYeahFilter {
         return current.timeIntervalSince(previous) > pauseThreshold
     }
 
-    static func isLoneYeah(_ text: String) -> Bool {
+    /// "Yeah" and "Okay" (including "OK"), ignoring case and surrounding punctuation.
+    static func noiseWord(_ text: String) -> String? {
         let core = text
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet.punctuationCharacters.union(.symbols))
-        return core.caseInsensitiveCompare("yeah") == .orderedSame
+            .lowercased()
+        switch core {
+        case "yeah":
+            return "yeah"
+        case "okay", "ok":
+            return "okay"
+        default:
+            return nil
+        }
     }
 }

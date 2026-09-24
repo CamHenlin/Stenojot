@@ -2,7 +2,6 @@ import SwiftUI
 
 struct LLMPanel: View {
     @Bindable var model: AppModel
-    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,11 +22,6 @@ struct LLMPanel: View {
                     }
                 }
                 .buttonStyle(.plain)
-                if model.llmOpen && model.llmAvailable {
-                    Button("Change…") { openWindow(id: AppWindow.llmSettings) }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                }
                 Spacer()
                 Button {
                     model.llmOpen.toggle()
@@ -40,14 +34,10 @@ struct LLMPanel: View {
             }
 
             if model.llmOpen && !model.llmAvailable {
-                Text("Choose a model to ask about this transcript. It downloads once and stays on this Mac.")
+                Text("Choose a model from LLM Settings in the menu bar. It downloads once and stays on this Mac.")
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
-                ScrollView {
-                    LLMModelList(model: model)
-                }
-                .frame(maxHeight: 280)
             } else if model.llmOpen {
                 rangeBar
                 HStack(alignment: .bottom, spacing: 8) {
@@ -74,20 +64,6 @@ struct LLMPanel: View {
                     Button("Clear") { model.llmResponse = "" }
                         .buttonStyle(.borderless)
                 }
-                DisclosureGroup("System Prompt", isExpanded: $model.llmShowSystemPrompt) {
-                    NoteTextEditor(text: $model.llmSystemPrompt)
-                        .frame(height: 80)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.line))
-                    HStack {
-                        Button("Save") { model.saveSystemPrompt() }
-                        if model.systemPromptSaved {
-                            Text("Saved")
-                                .font(.caption)
-                                .foregroundStyle(Theme.accent)
-                        }
-                    }
-                }
-                .font(.caption)
             }
         }
         .padding(12)

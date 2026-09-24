@@ -9,7 +9,8 @@ public enum ConfigStore {
             systemPrompt: file.systemPrompt ?? "",
             replacements: file.replacements ?? [],
             localModelId: file.localModelId,
-            summarySystemPrompt: file.summarySystemPrompt ?? ""
+            summarySystemPrompt: file.summarySystemPrompt ?? "",
+            summaryPass2SystemPrompt: file.summaryPass2SystemPrompt ?? ""
         )
     }
 
@@ -32,4 +33,5 @@ private struct FileConfig: Codable {
     var replacements: [ReplacementRule]?
     var localModelId: String?
     var summarySystemPrompt: String?
+    var summaryPass2SystemPrompt: String?
 }

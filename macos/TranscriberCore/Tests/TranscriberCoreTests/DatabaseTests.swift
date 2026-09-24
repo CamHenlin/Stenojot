@@ -173,7 +173,8 @@ final class DatabaseTests: XCTestCase {
             ollama: OllamaSettings(baseUrl: "http://localhost:11434", model: "gpt-oss:20b"),
             systemPrompt: "Be brief.",
             replacements: [ReplacementRule(from: "Linz", to: "LIMS")],
-            summarySystemPrompt: "Keep each stretch short."
+            summarySystemPrompt: "Keep each stretch short.",
+            summaryPass2SystemPrompt: "Drop filler."
         )
         try ConfigStore.save(config, to: url)
         let loaded = try ConfigStore.load(from: url)

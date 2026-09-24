@@ -61,10 +61,9 @@ final class AppModel {
     var llmResponse = ""
     var llmStreaming = false
     var llmLoadingModel = false
-    var llmShowSystemPrompt = false
-    var llmSystemPrompt = ""
     var systemPromptSaved = false
     var summarySystemPromptSaved = false
+    var summaryPass2SystemPromptSaved = false
     var llmDownloadingId: String?
     var llmDownloadFraction: Double?
     var llmDownloadError: String?
@@ -107,6 +106,7 @@ final class AppModel {
     private var toastTask: Task<Void, Never>?
     private var savedTask: Task<Void, Never>?
     private var summaryPromptSavedTask: Task<Void, Never>?
+    private var summaryPass2PromptSavedTask: Task<Void, Never>?
     private var gapTask: Task<Void, Never>?
     private var extractTask: Task<Void, Never>?
     private var extractGeneration = 0
@@ -178,7 +178,6 @@ final class AppModel {
             if FileManager.default.fileExists(atPath: AppSupport.configURL.path) {
                 config = try ConfigStore.load(from: AppSupport.configURL)
             }
-            llmSystemPrompt = config.systemPrompt
             refreshLocalModel()
         } catch {
             alertMessage = error.localizedDescription
@@ -388,8 +387,13 @@ final class AppModel {
         }
     }
 
-    func saveSystemPrompt() {
-        config.systemPrompt = llmSystemPrompt
+    /// Prompt shown in the transcript editor. Empty means no extra instruction is sent.
+    var transcriptSystemPromptText: String {
+        config.systemPrompt
+    }
+
+    func saveTranscriptSystemPrompt(_ text: String) {
+        config.systemPrompt = text.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             try AppSupport.ensureDirectory()
             try ConfigStore.save(config, to: AppSupport.configURL)
@@ -420,6 +424,28 @@ final class AppModel {
             summaryPromptSavedTask = Task {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 summarySystemPromptSaved = false
+            }
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    /// Prompt shown in the Summary Pass 2 editor. A blank stored value is the built-in prompt.
+    var summaryPass2SystemPromptText: String {
+        DailySummaryDocument.cleanupSystemPrompt(stored: config.summaryPass2SystemPrompt)
+    }
+
+    func saveSummaryPass2SystemPrompt(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        config.summaryPass2SystemPrompt = trimmed == DailySummaryDocument.cleanupSystemPrompt ? "" : trimmed
+        do {
+            try AppSupport.ensureDirectory()
+            try ConfigStore.save(config, to: AppSupport.configURL)
+            summaryPass2SystemPromptSaved = true
+            summaryPass2PromptSavedTask?.cancel()
+            summaryPass2PromptSavedTask = Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                summaryPass2SystemPromptSaved = false
             }
         } catch {
             alertMessage = error.localizedDescription
@@ -488,7 +514,7 @@ final class AppModel {
             llmOpen = true
             llmStreaming = false
             llmLoadingModel = false
-            llmResponse = "Download a language model to ask about this transcript."
+            llmResponse = "Choose a language model from LLM Settings in the menu bar."
             return
         }
         llmLoadingModel = !localLLM.isLoaded(modelId)
@@ -700,7 +726,6 @@ final class AppModel {
         try AppSupport.ensureDirectory()
         try ConfigStore.save(loaded, to: AppSupport.configURL)
         config = loaded
-        llmSystemPrompt = loaded.systemPrompt
         refreshLocalModel()
     }
 
@@ -805,13 +830,13 @@ final class AppModel {
         dbQueue.async {
             do {
                 let previous = try store.latestTranscription()
-                if LoneYeahFilter.shouldDrop(
+                if NoiseWordFilter.shouldDrop(
                     text: cleaned,
                     previousText: previous?.text,
                     previousTimestamp: previous?.timestamp,
                     timestamp: timestamp
                 ) {
-                    TranscriptionLog.info("Dropped a lone Yeah")
+                    TranscriptionLog.info("Dropped a lone \(cleaned)")
                     return
                 }
                 let row = try store.insertTranscription(
@@ -1335,7 +1360,7 @@ final class AppModel {
         if manual && !llmAvailable {
             failDailySummary(
                 day: day,
-                message: "Choose a language model before generating a daily summary."
+                message: "Choose a language model from LLM Settings in the menu bar."
             )
             return
         }
@@ -1374,7 +1399,7 @@ final class AppModel {
             if manual {
                 failDailySummary(
                     day: day,
-                    message: "Choose a language model before generating a daily summary."
+                    message: "Choose a language model from LLM Settings in the menu bar."
                 )
             }
             return
@@ -1443,12 +1468,36 @@ final class AppModel {
             return
         }
 
-        let text = DailySummaryDocument.assemble(
+        let draft = DailySummaryDocument.assemble(
             day: day,
             sections: sections,
             actionItems: job.actionItems
         )
-        summaryStreamText = text
+        summaryStreamText = draft
+        let text: String
+        do {
+            guard let cleaned = try await cleanDailySummary(
+                draft,
+                modelId: modelId,
+                generation: generation
+            ) else {
+                endDailySummaryUI(generation)
+                return
+            }
+            text = cleaned
+        } catch {
+            guard summaryIsCurrent(generation) else {
+                endDailySummaryUI(generation)
+                return
+            }
+            endDailySummaryUI(generation)
+            reportDailySummaryFailure(day: day, manual: manual, message: error.localizedDescription)
+            return
+        }
+        guard summaryIsCurrent(generation) else {
+            endDailySummaryUI(generation)
+            return
+        }
         do {
             let inserted = try await insertGeneratedDailySummary(
                 day: day,
@@ -1515,6 +1564,34 @@ final class AppModel {
             sections.append(DailySummaryDocument.section(heading: heading, summary: summary))
         }
         return sections
+    }
+
+    /// Nil when this generation was cancelled. Throws when the model fails or returns nothing.
+    private func cleanDailySummary(
+        _ draft: String,
+        modelId: String,
+        generation: Int
+    ) async throws -> String? {
+        guard summaryIsCurrent(generation) else { return nil }
+        var piece = ""
+        summaryStreamText = "Cleaning the summary\n\n"
+        for try await token in localLLM.stream(
+            modelId: modelId,
+            system: DailySummaryDocument.cleanupSystemPrompt(stored: config.summaryPass2SystemPrompt),
+            user: DailySummaryDocument.cleanupPrompt(draft),
+            maxTokens: DailySummaryDocument.cleanupMaxTokens(for: draft)
+        ) {
+            guard summaryIsCurrent(generation) else { return nil }
+            summaryLoadingModel = false
+            piece += token
+            summaryStreamText = "Cleaning the summary\n\n\(piece)"
+        }
+        guard summaryIsCurrent(generation) else { return nil }
+        let cleaned = piece.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else {
+            throw LocalLLMError(message: "The cleanup pass returned an empty summary.")
+        }
+        return cleaned
     }
 
     private func liveSummary(

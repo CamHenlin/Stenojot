@@ -9,7 +9,7 @@ public enum Speaker: String, Codable, Equatable, Sendable {
         case .you:
             return "You"
         case .caller:
-            return "Caller"
+            return "Others"
         }
     }
 

@@ -26,7 +26,9 @@ struct TranscriberApp: App {
                 Button("LLM Settings…") { openWindow(id: AppWindow.llmSettings) }
                     .keyboardShortcut("l", modifiers: [.command, .shift])
                 Menu("System Prompt") {
+                    Button("Transcript…") { openWindow(id: AppWindow.transcriptPrompt) }
                     Button("Summary…") { openWindow(id: AppWindow.summaryPrompt) }
+                    Button("Summary Pass 2…") { openWindow(id: AppWindow.summaryPass2Prompt) }
                 }
             }
             CommandGroup(after: .importExport) {
@@ -41,8 +43,20 @@ struct TranscriberApp: App {
         }
         .defaultSize(width: 640, height: 560)
 
+        Window("Transcript System Prompt", id: AppWindow.transcriptPrompt) {
+            TranscriptSystemPromptView(model: model)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 640, height: 480)
+
         Window("Summary System Prompt", id: AppWindow.summaryPrompt) {
-            SummarySystemPromptView(model: model)
+            SummarySystemPromptView(model: model, pass: .stretch)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 640, height: 480)
+
+        Window("Summary Pass 2", id: AppWindow.summaryPass2Prompt) {
+            SummarySystemPromptView(model: model, pass: .cleanup)
                 .preferredColorScheme(.dark)
         }
         .defaultSize(width: 640, height: 480)
@@ -59,7 +73,9 @@ struct TranscriberApp: App {
 
 enum AppWindow {
     static let llmSettings = "llm-settings"
+    static let transcriptPrompt = "transcript-system-prompt"
     static let summaryPrompt = "summary-system-prompt"
+    static let summaryPass2Prompt = "summary-pass-2-system-prompt"
     static let dailySummary = "daily-summary"
 }
 

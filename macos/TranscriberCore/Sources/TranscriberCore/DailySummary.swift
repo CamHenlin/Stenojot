@@ -61,8 +61,37 @@ public enum DailySummaryDocument {
 
     /// The instruction sent with each stretch. A blank stored prompt uses the built-in one.
     public static func chunkSystemPrompt(stored: String) -> String {
+        storedPrompt(stored, fallback: chunkSystemPrompt)
+    }
+
+    /// Instruction for the cleanup pass over a finished daily summary.
+    public static let cleanupSystemPrompt = """
+    You clean a daily summary the user will keep. The summary includes a date heading, time headings for each stretch, and an Action items section.
+
+    Remove passages that add no information. Drop a sentence or paragraph that only reports a bare acknowledgement, such as someone saying "Yeah", or that only says a person responded without adding context. Use the rest of the summary to decide: keep a short reply when it confirms a decision, answers a question, or otherwise changes what the summary says.
+
+    Leave useful facts, decisions, names, and topics as written. Keep the date heading, the time headings, and the Action items section unchanged. Do not add content. Return only the cleaned summary.
+    """
+
+    /// The instruction sent with the full summary. A blank stored prompt uses the built-in one.
+    public static func cleanupSystemPrompt(stored: String) -> String {
+        storedPrompt(stored, fallback: cleanupSystemPrompt)
+    }
+
+    /// Output budget for the cleanup pass. The reply is the summary with passages removed, so the budget tracks the draft length.
+    public static func cleanupMaxTokens(for summary: String) -> Int {
+        let estimated = max(1, summary.utf8.count / 3)
+        return min(16_384, max(2_048, estimated))
+    }
+
+    /// The user message for the cleanup pass: the first-pass summary and nothing else.
+    public static func cleanupPrompt(_ summary: String) -> String {
+        summary
+    }
+
+    private static func storedPrompt(_ stored: String, fallback: String) -> String {
         let trimmed = stored.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return chunkSystemPrompt }
+        guard !trimmed.isEmpty else { return fallback }
         return trimmed
     }
 

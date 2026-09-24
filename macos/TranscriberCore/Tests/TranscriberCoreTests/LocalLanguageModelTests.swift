@@ -58,5 +58,6 @@ final class LocalLanguageModelTests: XCTestCase {
         XCTAssertNil(legacyConfig.localModelId)
         XCTAssertEqual(legacyConfig.systemPrompt, "Hi")
         XCTAssertEqual(legacyConfig.summarySystemPrompt, "")
+        XCTAssertEqual(legacyConfig.summaryPass2SystemPrompt, "")
     }
 }

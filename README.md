@@ -13,6 +13,14 @@ I wanted a transcription tool that stayed on my computer and was still useful af
 
 Nothing I found did all of that together, so I built Parakeet Transcriber.
 
+## Download
+
+[Download Parakeet Transcriber](https://github.com/CamHenlin/Transcriber/releases/latest/download/ParakeetTranscriber.zip) for an Apple Silicon Mac on macOS 14 or later.
+
+Unzip it and move **Parakeet Transcriber** to Applications. The first time you open it, Control-click the app and choose Open, then Open again. macOS does not recognize this copy's signature, so a normal double-click stays blocked until you do that.
+
+The zip does not include the transcription packages or the model weights. Those download on first launch.
+
 It is a Mac app. It listens while you talk, writes the transcript down as you go, and keeps everything on the machine. The language model runs on the Mac too, so questions, action items, and daily summaries stay there with the transcript.
 
 ## Features
@@ -109,6 +117,12 @@ xcodebuild -project macos/ParakeetTranscriber.xcodeproj -scheme ParakeetTranscri
 
 The product is `Parakeet Transcriber.app`. Copy it to `/Applications` when you want it there. The Python virtualenv records the path of the bundled interpreter. Move the app after that environment exists and the next launch rebuilds it.
 
+To publish a downloadable build, tag a Release and upload a zip named `ParakeetTranscriber.zip`. The README link always points at that file on the latest release:
+
+```bash
+macos/Scripts/release.sh v1.0.0
+```
+
 Core logic tests, with no microphone and no model:
 
 ```bash
@@ -151,7 +165,7 @@ A lone "Yeah" after more than 30 seconds of silence is dropped. Parakeet often h
 
 ### Language model
 
-The app runs a language model in-process with MLX. Open the LLM panel at the bottom of the transcript, or choose a model from LLM Settings (⇧⌘L). Weights download once into `~/Library/Application Support/Parakeet Transcriber/models/` and stay there after you quit.
+The app runs a language model in-process with MLX. Choose a model from LLM Settings in the menu bar (⇧⌘L). Weights download once into `~/Library/Application Support/Parakeet Transcriber/models/` and stay there after you quit. Open the LLM panel at the bottom of the transcript to ask about the day.
 
 | Model | Hugging Face id | Download | Memory while loaded |
 |---|---|---|---|
@@ -162,7 +176,7 @@ The app runs a language model in-process with MLX. Open the LLM panel at the bot
 
 Memory above is the weights before a long transcript adds more. Gemma fits a short question on an 8 GB Mac. Qwen 2.5 7B is the better fit for a full day, and is comfortable on 16 GB.
 
-Ask a question about the full day, or about the selected range. The prompt includes transcript lines, with speaker labels, and any notes in that context. The reply streams into the panel and is saved on the transcript as an LLM note. The chat system prompt is edited in the panel and stored as `systemPrompt`. Qwen-style `<think>` spans are stripped from the streamed text.
+Ask a question about the full day, or about the selected range. The prompt includes transcript lines, with speaker labels, and any notes in that context. The reply streams into the panel and is saved on the transcript as an LLM note. The instruction sent with those questions is edited from System Prompt > Transcript… in the menu bar and stored as `systemPrompt`. Leave it empty to send only the transcript and the question. Reset clears it. Qwen-style `<think>` spans are stripped from the streamed text.
 
 The same loaded model writes action items and daily summaries. Switching models unloads the previous one.
 
@@ -216,7 +230,8 @@ The sidecar keeps a separate energy-based voice detector for each speaker. It ca
 │   ├── Scripts/
 │   │   ├── ensure-codesign-identity.sh
 │   │   ├── prepare-python.sh
-│   │   └── bundle-resources.sh
+│   │   ├── bundle-resources.sh
+│   │   └── release.sh
 │   ├── Transcriber/                 # SwiftUI app, audio capture, sidecar, MLX runner
 │   └── TranscriberCore/             # Library and unit tests
 ├── sidecar/

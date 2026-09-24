@@ -62,7 +62,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(
             copied,
             CopyText(
-                text: "\(first)  Caller: First\n[note] Between\n[LLM note] Summary\n\(second)  Caller: Second",
+                text: "\(first)  Others: First\n[note] Between\n[LLM note] Summary\n\(second)  Others: Second",
                 count: 2
             )
         )

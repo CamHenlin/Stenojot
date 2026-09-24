@@ -16,7 +16,7 @@ final class LLMPromptTests: XCTestCase {
         )
         let time = Timestamp.formatTime("2026-09-23T15:04:05Z")
         XCTAssertTrue(content.contains("a selected range of 1 message"))
-        XCTAssertTrue(content.contains("[\(time)] Caller: Hello"))
+        XCTAssertTrue(content.contains("[\(time)] Others: Hello"))
         XCTAssertTrue(content.contains("--- User Notes ---"))
         XCTAssertTrue(content.contains("[note] Remember this"))
         XCTAssertTrue(content.hasSuffix("Summarize"))

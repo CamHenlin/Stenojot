@@ -4,7 +4,6 @@ import TranscriberCore
 struct DailySummaryView: View {
     @Bindable var model: AppModel
     var day: String
-    @Environment(\.openWindow) private var openWindow
     @State private var text = ""
     @State private var savedText = ""
 
@@ -110,9 +109,6 @@ struct DailySummaryView: View {
                 model.generateDailySummary(day: day)
             }
             .disabled(model.isDailySummaryBusy(day))
-            if !model.llmAvailable {
-                Button("LLM Settings…") { openWindow(id: AppWindow.llmSettings) }
-            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

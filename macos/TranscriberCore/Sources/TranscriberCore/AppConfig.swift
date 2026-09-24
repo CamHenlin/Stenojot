@@ -45,18 +45,22 @@ public struct AppConfig: Codable, Equatable {
     public var localModelId: String?
     /// Daily-summary instruction. Empty uses the built-in prompt.
     public var summarySystemPrompt: String
+    /// Cleanup pass over a finished daily summary. Empty uses the built-in prompt.
+    public var summaryPass2SystemPrompt: String
 
     public init(
         ollama: OllamaSettings = OllamaSettings(baseUrl: "http://localhost:11434", model: "gpt-oss:20b"),
         systemPrompt: String = "",
         replacements: [ReplacementRule] = [],
         localModelId: String? = nil,
-        summarySystemPrompt: String = ""
+        summarySystemPrompt: String = "",
+        summaryPass2SystemPrompt: String = ""
     ) {
         self.ollama = ollama
         self.systemPrompt = systemPrompt
         self.replacements = replacements
         self.localModelId = localModelId
         self.summarySystemPrompt = summarySystemPrompt
+        self.summaryPass2SystemPrompt = summaryPass2SystemPrompt
     }
 }

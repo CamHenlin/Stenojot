@@ -21,6 +21,7 @@
 		78484A361142D4534EBE9095 /* PythonEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0250BB38A6ECF900D722E84E /* PythonEnvironment.swift */; };
 		9130F88361A6F5ABDF5A17DC /* ActionItemsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C802B352020E676C7548A9 /* ActionItemsPanel.swift */; };
 		94070FE2086850F48251E3F5 /* SummarySystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30E11AA6434E49BE61EC7DC /* SummarySystemPromptView.swift */; };
+		A1C7E4B92D5F48A0B6C31E07 /* TranscriptSystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D04F1A6E2C49D7A5F08C13 /* TranscriptSystemPromptView.swift */; };
 		98F753A469E3990A454656D6 /* SystemAudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843010C4EDA8D41CFF576D79 /* SystemAudioCapture.swift */; };
 		A6C4D4B8F3BB40A5A59AB3DF /* FirstLaunchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EABF061460BF7416C98C62 /* FirstLaunchView.swift */; };
 		A96FC49A76A83A206CEAD120 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = E855891662B1B0EE37F25504 /* Tokenizers */; };
@@ -33,6 +34,7 @@
 		F21CA96E8D6B0512CCDE8A39 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E03FC48F5315370682CE811 /* SettingsView.swift */; };
 		F35F3CA9C05ACDA38B0022E4 /* TranscriberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392CC06813AF05BF113048EE /* TranscriberApp.swift */; };
 		F74968DF43DE18A95600A279 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8150E118BC834E5D50624FF1 /* LocalLLMService.swift */; };
+		FCB2899D5294F95679E6D518 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FA70E6C55214709FDF661A3 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,12 +49,14 @@
 		3DFCB827D7BC267440DFF1DE /* TranscriptionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionLog.swift; sourceTree = "<group>"; };
 		74B84267FBC65C6A104ECAC2 /* LLMPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMPanel.swift; sourceTree = "<group>"; };
 		7B1AD70810BB1312843BB326 /* LLMSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMSettingsView.swift; sourceTree = "<group>"; };
+		7FA70E6C55214709FDF661A3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8150E118BC834E5D50624FF1 /* LocalLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
 		843010C4EDA8D41CFF576D79 /* SystemAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioCapture.swift; sourceTree = "<group>"; };
 		9346468215A3FD35FA9A6A08 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		9E03FC48F5315370682CE811 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A38B84720FEF84CE4C8AE9C5 /* Transcriber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Transcriber.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4C802B352020E676C7548A9 /* ActionItemsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionItemsPanel.swift; sourceTree = "<group>"; };
+		B8D04F1A6E2C49D7A5F08C13 /* TranscriptSystemPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptSystemPromptView.swift; sourceTree = "<group>"; };
 		C4848674B40D98196D46E5B8 /* TranscriptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptListView.swift; sourceTree = "<group>"; };
 		D30E11AA6434E49BE61EC7DC /* SummarySystemPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummarySystemPromptView.swift; sourceTree = "<group>"; };
 		D977B8A9CBEDB9F86032EAC0 /* DailySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummaryView.swift; sourceTree = "<group>"; };
@@ -81,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				9346468215A3FD35FA9A6A08 /* AppModel.swift */,
+				7FA70E6C55214709FDF661A3 /* Assets.xcassets */,
 				05E5FDAEC016DC1E0FF05FC4 /* AudioCapture.swift */,
 				8150E118BC834E5D50624FF1 /* LocalLLMService.swift */,
 				0250BB38A6ECF900D722E84E /* PythonEnvironment.swift */,
@@ -114,6 +119,7 @@
 				37FBA5247C690A043D1BDC3E /* NoteTextEditor.swift */,
 				9E03FC48F5315370682CE811 /* SettingsView.swift */,
 				D30E11AA6434E49BE61EC7DC /* SummarySystemPromptView.swift */,
+				B8D04F1A6E2C49D7A5F08C13 /* TranscriptSystemPromptView.swift */,
 				23E570B21811BD00A558E200 /* Theme.swift */,
 				C4848674B40D98196D46E5B8 /* TranscriptListView.swift */,
 			);
@@ -146,6 +152,7 @@
 			buildPhases = (
 				09D28DA665C369A4C9FEB452 /* Stable code signing identity */,
 				8491AB341E042D77F1F9E7B9 /* Sources */,
+				8403C023AE051C9C3B5FAE28 /* Resources */,
 				8A737C3163F505FB14CFFC85 /* Frameworks */,
 				041145C9CAE0455DDFCE2004 /* Bundle Python and sidecar */,
 			);
@@ -204,6 +211,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8403C023AE051C9C3B5FAE28 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FCB2899D5294F95679E6D518 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		041145C9CAE0455DDFCE2004 /* Bundle Python and sidecar */ = {
@@ -265,6 +283,7 @@
 				F21CA96E8D6B0512CCDE8A39 /* SettingsView.swift in Sources */,
 				40A5E262A6E7B2362483B1B2 /* SidecarProcess.swift in Sources */,
 				94070FE2086850F48251E3F5 /* SummarySystemPromptView.swift in Sources */,
+				A1C7E4B92D5F48A0B6C31E07 /* TranscriptSystemPromptView.swift in Sources */,
 				98F753A469E3990A454656D6 /* SystemAudioCapture.swift in Sources */,
 				4553CCE595DD709171E8DD3D /* Theme.swift in Sources */,
 				F35F3CA9C05ACDA38B0022E4 /* TranscriberApp.swift in Sources */,

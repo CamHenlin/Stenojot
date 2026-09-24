@@ -117,6 +117,29 @@ final class DailySummaryTests: XCTestCase {
         XCTAssertEqual(DailySummaryDocument.chunkSystemPrompt(stored: "Be brief."), "Be brief.")
     }
 
+    func testCleanupPromptSendsTheFullSummary() {
+        let summary = """
+        Wednesday, Sep 23, 2026
+
+        8:00 AM–8:10 AM
+        The caller responded with a simple "Yeah" without any additional context or information.
+
+        Action items
+        - [open] [8:05 AM] Send the deck
+        """
+        XCTAssertEqual(DailySummaryDocument.cleanupPrompt(summary), summary)
+        XCTAssertTrue(DailySummaryDocument.cleanupSystemPrompt.contains("Yeah"))
+        XCTAssertTrue(DailySummaryDocument.cleanupSystemPrompt.contains("Action items"))
+        XCTAssertEqual(
+            DailySummaryDocument.cleanupSystemPrompt(stored: "  "),
+            DailySummaryDocument.cleanupSystemPrompt
+        )
+        XCTAssertEqual(DailySummaryDocument.cleanupSystemPrompt(stored: "Drop filler."), "Drop filler.")
+        XCTAssertEqual(DailySummaryDocument.cleanupMaxTokens(for: "short"), 2_048)
+        XCTAssertEqual(DailySummaryDocument.cleanupMaxTokens(for: String(repeating: "a", count: 90_000)), 16_384)
+        XCTAssertGreaterThan(DailySummaryDocument.cleanupMaxTokens(for: String(repeating: "a", count: 12_000)), 2_048)
+    }
+
     func testAssembledDocumentUsesSummariesAndExtractedActionItems() {
         let first = Timestamp.formatTime("2026-09-23T15:00:00Z")
         let second = Timestamp.formatTime("2026-09-23T16:00:00Z")
