@@ -93,10 +93,13 @@ struct TranscriptDetailView: View {
 
     private var statusSubtitle: Text {
         Text(statusLine)
-            .foregroundStyle(model.isListening ? Color.green : Theme.muted)
+            .foregroundStyle(model.isListening && !model.musicHoldingTranscription ? Color.green : Theme.muted)
     }
 
     private var statusLine: String {
+        if model.musicHoldingTranscription {
+            return "Paused while Music is playing"
+        }
         if let detail = model.activityDetail, !model.isListening {
             return detail
         }

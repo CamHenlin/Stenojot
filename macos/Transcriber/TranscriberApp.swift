@@ -34,6 +34,10 @@ struct TranscriberApp: App {
                     .keyboardShortcut("l", modifiers: [.command, .shift])
                 Button("Text Replacement Settings…") { openWindow(id: AppWindow.textReplacements) }
                 Button("Ignored Apps…") { openWindow(id: AppWindow.ignoredApps) }
+                Toggle("Pause While Music Plays", isOn: Binding(
+                    get: { model.config.pauseWhileMusicPlaying },
+                    set: { model.setPauseWhileMusicPlaying($0) }
+                ))
                 Menu("System Prompt") {
                     Button("Transcript…") { openWindow(id: AppWindow.transcriptPrompt) }
                     Button("Action Items…") { openWindow(id: AppWindow.actionItemsPrompt) }

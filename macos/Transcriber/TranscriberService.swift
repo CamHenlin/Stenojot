@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import Foundation
 import TranscriberCore
@@ -21,6 +22,14 @@ final class TranscriberService {
     private var announcedListening = false
     private var systemAudioFailure: String?
     private var excludedBundleIDs: Set<String> = []
+    private let audioHold = AudioHold()
+
+    /// While held, captured audio is replaced with silence so an open phrase can end.
+    /// Frames are dropped instead until the noise floor has been measured, so a
+    /// launch during playback calibrates after Music stops.
+    func setHoldForMusic(_ hold: Bool) {
+        audioHold.setHeld(hold)
+    }
 
     func setExcludedAudioBundleIDs(_ bundleIDs: Set<String>) {
         excludedBundleIDs = bundleIDs
@@ -85,6 +94,7 @@ final class TranscriberService {
         didStartAudio = false
         announcedListening = false
         systemAudioFailure = nil
+        audioHold.setCalibrated(false)
         microphone.stop()
         systemAudio.stop()
         mixer.reset()
@@ -102,6 +112,7 @@ final class TranscriberService {
             let text = event.message ?? ""
             if text.hasPrefix("Listening") {
                 announcedListening = true
+                audioHold.setCalibrated(true)
                 onStatus(listeningStatus(text))
             } else {
                 onStatus(text)
@@ -156,19 +167,20 @@ final class TranscriberService {
         let queue = mixQueue
         let mixer = mixer
         let gate = mixGate
+        let hold = audioHold
         mixer.onFrame = { speaker, samples in
             process.writeFrame(Self.encode(speaker: speaker, samples: samples))
         }
         microphone.onFrame = { data, time in
             queue.async {
-                guard gate.contains(token) else { return }
-                mixer.append(data, from: .you, at: time)
+                guard gate.contains(token), let frame = hold.frame(data) else { return }
+                mixer.append(frame, from: .you, at: time)
             }
         }
         systemAudio.onFrame = { data, time in
             queue.async {
-                guard gate.contains(token) else { return }
-                mixer.append(data, from: .caller, at: time)
+                guard gate.contains(token), let frame = hold.frame(data) else { return }
+                mixer.append(frame, from: .caller, at: time)
             }
         }
         systemAudio.onStopped = { [weak self] message in
@@ -210,6 +222,36 @@ final class TranscriberService {
     }
 }
 
+private final class AudioHold: @unchecked Sendable {
+    private let lock = NSLock()
+    private var held = false
+    private var calibrated = false
+
+    func setHeld(_ held: Bool) {
+        lock.lock()
+        self.held = held
+        lock.unlock()
+    }
+
+    func setCalibrated(_ calibrated: Bool) {
+        lock.lock()
+        self.calibrated = calibrated
+        lock.unlock()
+    }
+
+    /// Nil drops the frame. Silence is used only after the noise floor is set,
+    /// so calibration waits for real room audio.
+    func frame(_ data: Data) -> Data? {
+        lock.lock()
+        let held = self.held
+        let calibrated = self.calibrated
+        lock.unlock()
+        guard held else { return data }
+        guard calibrated else { return nil }
+        return Data(count: data.count)
+    }
+}
+
 private final class MixGate: @unchecked Sendable {
     private let lock = NSLock()
     private var value = 0
@@ -227,5 +269,93 @@ private final class MixGate: @unchecked Sendable {
         let current = value
         lock.unlock()
         return current == token
+    }
+}
+
+/// Watches the Music app and reports whether it is currently playing.
+@MainActor
+final class MusicPlaybackMonitor: NSObject {
+    var onPlayingChanged: (Bool) -> Void = { _ in }
+
+    private var observing = false
+    private var playing = false
+    private var terminateObserver: NSObjectProtocol?
+
+    func start() {
+        if !observing {
+            DistributedNotificationCenter.default().addObserver(
+                self,
+                selector: #selector(playerInfo(_:)),
+                name: Notification.Name("com.apple.Music.playerInfo"),
+                object: nil,
+                suspensionBehavior: .deliverImmediately
+            )
+            terminateObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.didTerminateApplicationNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] note in
+                let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+                guard app?.bundleIdentifier == "com.apple.Music" else { return }
+                Task { @MainActor in
+                    self?.update(playing: false)
+                }
+            }
+            observing = true
+        }
+        refresh()
+    }
+
+    func stop() {
+        if observing {
+            DistributedNotificationCenter.default().removeObserver(self)
+            if let terminateObserver {
+                NSWorkspace.shared.notificationCenter.removeObserver(terminateObserver)
+                self.terminateObserver = nil
+            }
+            observing = false
+        }
+        update(playing: false)
+    }
+
+    @objc private func playerInfo(_ note: Notification) {
+        let raw = note.userInfo?["Player State"] as? String
+        let state = raw.flatMap(MusicPlayerState.init(playbackDescription:))
+        Task { @MainActor in
+            if let state {
+                self.update(playing: state.isPlaying)
+            } else {
+                self.refresh()
+            }
+        }
+    }
+
+    private func refresh() {
+        let playing = Self.musicIsPlaying()
+        update(playing: playing)
+    }
+
+    private func update(playing: Bool) {
+        guard playing != self.playing else { return }
+        self.playing = playing
+        onPlayingChanged(playing)
+    }
+
+    /// Asks Music for its current player state. Empty when Music is not running.
+    static func musicIsPlaying() -> Bool {
+        let source = """
+        if application "Music" is running then
+            tell application "Music" to player state as string
+        end if
+        """
+        var error: NSDictionary?
+        guard let script = NSAppleScript(source: source) else { return false }
+        let result = script.executeAndReturnError(&error)
+        if let error {
+            TranscriptionLog.info("Music playback check failed: \(error)")
+            return false
+        }
+        let text = result.stringValue ?? ""
+        return MusicPlayerState(playbackDescription: text)?.isPlaying == true
     }
 }

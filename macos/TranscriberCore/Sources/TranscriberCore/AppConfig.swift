@@ -51,6 +51,8 @@ public struct AppConfig: Codable, Equatable {
     public var actionItemsSystemPrompt: String
     /// Bundle ids whose played audio is left out of system-audio capture.
     public var ignoredAudioBundleIDs: [String]
+    /// When true, live audio is replaced with silence while the Music app is playing.
+    public var pauseWhileMusicPlaying: Bool
 
     public init(
         ollama: OllamaSettings = OllamaSettings(baseUrl: "http://localhost:11434", model: "gpt-oss:20b"),
@@ -60,7 +62,8 @@ public struct AppConfig: Codable, Equatable {
         summarySystemPrompt: String = "",
         summaryPass2SystemPrompt: String = "",
         actionItemsSystemPrompt: String = "",
-        ignoredAudioBundleIDs: [String] = []
+        ignoredAudioBundleIDs: [String] = [],
+        pauseWhileMusicPlaying: Bool = false
     ) {
         self.ollama = ollama
         self.systemPrompt = systemPrompt
@@ -70,5 +73,6 @@ public struct AppConfig: Codable, Equatable {
         self.summaryPass2SystemPrompt = summaryPass2SystemPrompt
         self.actionItemsSystemPrompt = actionItemsSystemPrompt
         self.ignoredAudioBundleIDs = ignoredAudioBundleIDs
+        self.pauseWhileMusicPlaying = pauseWhileMusicPlaying
     }
 }

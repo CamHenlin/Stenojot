@@ -39,6 +39,7 @@ It is a Mac app. It listens while you talk, writes the transcript down as you go
 - If call audio is declined, the microphone is still transcribed
 - Ignored Apps, in the menu bar, lists running apps. Check one to leave its audio out of transcription, such as Music or a game. The choice is remembered by bundle id and applied again the next time that app is running
 - On speakers, the microphone can still hear an ignored app. The exclusion applies to system audio
+- Pause While Music Plays, in the menu bar, is off until you turn it on. While the Music app is playing, transcription pauses and the speech model stays loaded. It resumes when Music is paused, stopped, or quit. If Stenojot opens while Music is already playing, the noise floor is measured after the music stops
 - Starts listening when the app opens. Closing the window leaves it running. Quitting stops it
 - New lines appear as they are saved. The transcript stays pinned to the latest line until you scroll up
 - Drops a stray "Yeah" or "Okay" that shows up in a notification sound or other background noise
@@ -121,6 +122,8 @@ The window opens on the latest day. The sidebar lists days, and the search field
 Each line is labeled **You** or **Others**. Headphones keep the two streams apart on their own. On speakers, the app subtracts the call audio from the microphone so the other side is not transcribed twice. If system audio is declined, the app still transcribes the microphone and labels those lines You.
 
 Ignored Apps, in the menu bar, lists the apps that are running, with a checkbox for each. A checked app is left out of call audio, so Music or a game is not transcribed. Apps you have already ignored stay on the list when they are not running. On speakers, the microphone can still hear them.
+
+Pause While Music Plays, also in the menu bar, is a separate switch and starts off. Turn it on to pause all transcription while the Music app is playing, including sound the microphone picks up from speakers. The speech model stays loaded. The status line reads "Paused while Music is playing" until Music is paused, stopped, or quit. The first time you turn it on, macOS asks whether Stenojot may control Music. If Stenojot launches while Music is already playing, it waits to measure the room's noise floor until the music stops, so the song is not treated as background noise. The switch is saved and only watches the Music app.
 
 ### Notes and ranges
 

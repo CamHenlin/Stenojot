@@ -96,6 +96,8 @@ final class AppModel {
     var scrollToken = 0
     /// GitHub release page when a newer version has been found. Nil hides the toolbar button.
     var updateReleaseURL: URL?
+    /// True while the Music app is playing and the pause setting is on.
+    var musicHoldingTranscription = false
 
     private var store: TranscriptStore?
     private let pythonEnvironment = PythonEnvironment()
@@ -133,6 +135,7 @@ final class AppModel {
     private var wakeObserver: NSObjectProtocol?
     private var observedLocalDay: String?
     private let updateChecker = UpdateChecker()
+    private let musicMonitor = MusicPlaybackMonitor()
 
     var transcriptionCount: Int {
         items.reduce(0) { $0 + ($1.kind == .transcription ? 1 : 0) }
@@ -193,6 +196,7 @@ final class AppModel {
                 config = try ConfigStore.load(from: AppSupport.configURL)
             }
             applyIgnoredAudioApps()
+            applyMusicPauseSetting()
             refreshLocalModel()
         } catch {
             alertMessage = error.localizedDescription
@@ -216,6 +220,7 @@ final class AppModel {
 
     func shutdown() {
         updateChecker.stop()
+        musicMonitor.stop()
         setupGeneration += 1
         pythonEnvironment.cancel()
         searchTask?.cancel()
@@ -531,6 +536,42 @@ final class AppModel {
         transcriber.setExcludedAudioBundleIDs(Set(config.ignoredAudioBundleIDs))
     }
 
+    func setPauseWhileMusicPlaying(_ enabled: Bool) {
+        guard config.pauseWhileMusicPlaying != enabled else { return }
+        config.pauseWhileMusicPlaying = enabled
+        do {
+            try AppSupport.ensureDirectory()
+            try ConfigStore.save(config, to: AppSupport.configURL)
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+        applyMusicPauseSetting()
+    }
+
+    private func applyMusicPauseSetting() {
+        guard config.pauseWhileMusicPlaying else {
+            musicMonitor.stop()
+            setMusicHold(false)
+            return
+        }
+        musicMonitor.onPlayingChanged = { [weak self] playing in
+            self?.setMusicHold(playing)
+        }
+        musicMonitor.start()
+    }
+
+    private func setMusicHold(_ playing: Bool) {
+        let hold = config.pauseWhileMusicPlaying && playing
+        guard musicHoldingTranscription != hold else { return }
+        musicHoldingTranscription = hold
+        transcriber.setHoldForMusic(hold)
+        if hold {
+            TranscriptionLog.info("Pausing transcription while Music is playing.")
+        } else if config.pauseWhileMusicPlaying {
+            TranscriptionLog.info("Resuming transcription. Music is paused or stopped.")
+        }
+    }
+
     @discardableResult
     func saveReplacements(_ rules: [ReplacementRule]) throws -> [ReplacementRule] {
         let cleaned = ReplacementEngine.sanitized(rules)
@@ -827,6 +868,7 @@ final class AppModel {
         try ConfigStore.save(loaded, to: AppSupport.configURL)
         config = loaded
         applyIgnoredAudioApps()
+        applyMusicPauseSetting()
         refreshLocalModel()
     }
 
