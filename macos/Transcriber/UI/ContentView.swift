@@ -61,20 +61,31 @@ struct SidebarView: View {
     @State private var summaryColumnWidth: CGFloat = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            TextField("Search", text: $model.searchInput)
-                .textFieldStyle(.plain)
-                .padding(8)
-                .background(Color.white.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .onChange(of: model.searchInput) { _, _ in
-                    model.searchChanged()
-                }
-            dateList
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("Search", text: $model.searchInput)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background(Color.white.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .onChange(of: model.searchInput) { _, _ in
+                        model.searchChanged()
+                    }
+                dateList
+            }
+            .frame(maxHeight: .infinity)
+
+            Theme.line
+                .frame(height: 1)
+                .padding(.top, 8)
+
+            KnowledgeBasePanel(model: model)
+                .frame(height: 240)
         }
         .padding(.top, 10)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Theme.sidebar)
         .navigationTitle("Transcriptions")
         .navigationSplitViewColumnWidth(min: 300, ideal: 320, max: 420)

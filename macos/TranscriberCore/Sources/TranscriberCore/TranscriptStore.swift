@@ -185,6 +185,140 @@ public final class TranscriptStore: @unchecked Sendable {
         }
     }
 
+    /// Newest edits first, so the document just saved stays at the top of the list.
+    public func fetchKnowledgeDocuments() throws -> [KnowledgeDocument] {
+        try pool.read { db in
+            try KnowledgeDocument.fetchAll(db, sql: """
+            SELECT \(Self.knowledgeDocumentColumns)
+            FROM knowledge_documents
+            ORDER BY updated_at DESC, id DESC
+            """)
+        }
+    }
+
+    public func fetchKnowledgeDocument(id: Int64) throws -> KnowledgeDocument? {
+        try pool.read { db in
+            try KnowledgeDocument.fetchOne(db, sql: """
+            SELECT \(Self.knowledgeDocumentColumns)
+            FROM knowledge_documents
+            WHERE id = ?
+            """, arguments: [id])
+        }
+    }
+
+    public func insertKnowledgeDocument(
+        title: String,
+        description: String,
+        text: String,
+        timestamp: String
+    ) throws -> KnowledgeDocument {
+        try pool.write { db in
+            try db.execute(sql: """
+            INSERT INTO knowledge_documents (title, description, text, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+            """, arguments: [title, description, text, timestamp, timestamp])
+            return KnowledgeDocument(
+                id: db.lastInsertedRowID,
+                title: title,
+                description: description,
+                text: text,
+                createdAt: timestamp,
+                updatedAt: timestamp,
+                allowsLLMUpdates: false
+            )
+        }
+    }
+
+    /// Newest archived save first.
+    public func fetchKnowledgeVersions(documentID: Int64) throws -> [KnowledgeDocumentVersion] {
+        try pool.read { db in
+            try KnowledgeDocumentVersion.fetchAll(db, sql: """
+            SELECT id, document_id, title, description, text, saved_at
+            FROM knowledge_document_versions
+            WHERE document_id = ?
+            ORDER BY saved_at DESC, id DESC
+            """, arguments: [documentID])
+        }
+    }
+
+    /// Documents the model is allowed to revise, in a stable order.
+    public func fetchKnowledgeDocumentsAllowingLLMUpdates() throws -> [KnowledgeDocument] {
+        try pool.read { db in
+            try KnowledgeDocument.fetchAll(db, sql: """
+            SELECT \(Self.knowledgeDocumentColumns)
+            FROM knowledge_documents
+            WHERE allow_llm_updates != 0
+            ORDER BY id ASC
+            """)
+        }
+    }
+
+    /// Turns model updates on or off without archiving a version or changing `updated_at`.
+    public func setKnowledgeDocumentAllowsLLMUpdates(id: Int64, allowed: Bool) throws {
+        try pool.write { db in
+            try db.execute(
+                sql: "UPDATE knowledge_documents SET allow_llm_updates = ? WHERE id = ?",
+                arguments: [allowed ? 1 : 0, id]
+            )
+        }
+    }
+
+    /// Archives the current text when the edit changes it, then writes the new text. `created_at` stays on the original insert.
+    /// When `expectedUpdatedAt` is set, a document saved since that timestamp is left unchanged.
+    @discardableResult
+    public func updateKnowledgeDocument(
+        id: Int64,
+        title: String,
+        description: String,
+        text: String,
+        timestamp: String,
+        expectedUpdatedAt: String? = nil
+    ) throws -> KnowledgeDocumentUpdate {
+        try pool.write { db in
+            guard let current = try KnowledgeDocument.fetchOne(db, sql: """
+            SELECT \(Self.knowledgeDocumentColumns)
+            FROM knowledge_documents
+            WHERE id = ?
+            """, arguments: [id]) else {
+                return .unchanged
+            }
+            if let expectedUpdatedAt, current.updatedAt != expectedUpdatedAt {
+                return .unchanged
+            }
+            if current.title == title && current.description == description && current.text == text {
+                return .unchanged
+            }
+            try db.execute(sql: """
+            INSERT INTO knowledge_document_versions (document_id, title, description, text, saved_at)
+            VALUES (?, ?, ?, ?, ?)
+            """, arguments: [id, current.title, current.description, current.text, current.updatedAt])
+            let version = KnowledgeDocumentVersion(
+                id: db.lastInsertedRowID,
+                documentId: id,
+                title: current.title,
+                description: current.description,
+                text: current.text,
+                savedAt: current.updatedAt
+            )
+            try db.execute(sql: """
+            UPDATE knowledge_documents
+            SET title = ?, description = ?, text = ?, updated_at = ?
+            WHERE id = ?
+            """, arguments: [title, description, text, timestamp, id])
+            return .saved(version)
+        }
+    }
+
+    public func deleteKnowledgeDocument(id: Int64) throws {
+        try pool.write { db in
+            try db.execute(
+                sql: "DELETE FROM knowledge_document_versions WHERE document_id = ?",
+                arguments: [id]
+            )
+            try db.execute(sql: "DELETE FROM knowledge_documents WHERE id = ?", arguments: [id])
+        }
+    }
+
     /// Writes a newly generated summary, replacing one already stored for that day.
     public func replaceDailySummary(day: String, text: String, timestamp: String) throws {
         try pool.write { db in
@@ -408,6 +542,10 @@ public final class TranscriptStore: @unchecked Sendable {
             done: false
         )
     }
+
+    private static let knowledgeDocumentColumns = """
+    id, title, description, text, created_at, updated_at, allow_llm_updates
+    """
 
     /// `date(timestamp)` is the UTC day. Transcripts are stored in UTC, so the day list uses local time.
     private static let localDay = "date(timestamp, 'localtime')"

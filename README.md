@@ -11,6 +11,7 @@ I wanted a transcription tool that stayed on my computer and was still useful af
 - Annotate the transcript as it happens, and keep those notes with the text
 - Use a local language model to pull action items out of what was said
 - Use a local language model to write a summary of the day
+- Keep a knowledge base beside the transcript, and let that model update the documents that should change
 - Ask that same model questions about part of a transcript, or about the whole day
 
 Nothing I found did all of that together, so I built Stenojot.
@@ -27,7 +28,7 @@ Unzip it and move **Stenojot** to Applications. The first time you open it, Cont
 
 The zip does not include the transcription packages or the model weights. Those download on first launch.
 
-It is a Mac app. It listens while you talk, writes the transcript down as you go, and keeps everything on the machine. The language model runs on the Mac too, so questions, action items, and daily summaries stay there with the transcript.
+It is a Mac app. It listens while you talk, writes the transcript down as you go, and keeps everything on the machine. The language model runs on the Mac too, so questions, action items, daily summaries, and knowledge-base updates stay there with the transcript.
 
 ## Features
 
@@ -96,9 +97,20 @@ It is a Mac app. It listens while you talk, writes the transcript down as you go
 - If the app stays open past midnight, it writes summaries for the days that ended while it was running. A day it was closed for is left alone until you press Generate
 - The instruction for each stretch, and the instruction for the cleanup pass, can each be edited. An empty instruction uses the built-in one
 
+### Knowledge base
+
+- A panel under the day list holds documents that sit with the transcripts and summaries
+- Add opens a document. The title, description, and text can be edited, then saved
+- Each save keeps the previous version. History shows the diff from that version to the one that replaced it
+- A mark beside the title shows when Allow LLM updates is on
+- Allow LLM updates, on a document, lets the model revise it after a daily summary and after each action-item pass. While that check runs, the summary window says Checking for knowledge base updates
+- A revision is saved as a new version. New or changed facts are stamped with when they were heard, such as [Sep 23, 2026, 3:04 PM]
+- The instruction for those updates is edited from System Prompt > Knowledge…. An empty instruction uses the built-in one
+- Delete removes a document from the list or from its window
+
 ### Your files
 
-- Transcripts, notes, action items, and summaries live in a database on this Mac
+- Transcripts, notes, action items, summaries, and knowledge documents live in a database on this Mac
 - Replacements, prompts, and the chosen model live in a settings file on this Mac
 - On first launch, start empty or import an existing database, and optionally an existing settings file
 - Import Database… and Import Settings… can replace those files later
@@ -150,7 +162,7 @@ Memory above is the weights before a long transcript adds more. Gemma fits a sho
 
 Ask a question about the full day, or about the selected range. The prompt includes transcript lines, with speaker labels, and any notes in that context. The reply streams into the panel and is saved on the transcript as an LLM note. The instruction sent with those questions is edited from System Prompt > Transcript… in the menu bar and stored as `systemPrompt`. Leave it empty to send only the transcript and the question. Reset clears it. Qwen-style `<think>` spans are stripped from the streamed text.
 
-The same loaded model writes action items and daily summaries. Switching models unloads the previous one.
+The same loaded model writes action items, daily summaries, and knowledge-base updates. Switching models unloads the previous one.
 
 ### Action items
 
@@ -165,3 +177,9 @@ Each day in the sidebar has Generate, or View once a summary exists. A summary i
 If the app stays running across local midnight, it generates summaries for the days that ended while it was open. Opening the app the next morning does not summarize a day it missed. Use Generate for those.
 
 The instruction for each stretch is edited from System Prompt > Summary… in the menu bar. The cleanup pass is edited from System Prompt > Summary Pass 2…. An empty prompt uses the built-in one. Reset in either window restores its built-in text.
+
+### Knowledge base
+
+The sidebar has a knowledge base under the day list. Add creates a document and opens it. The window has a title, a description, and a text body, edited the same way as a daily summary. Save writes all three and keeps the previous version. History lists those earlier saves. Choosing one shows what changed between that version and the save that replaced it: removed lines, added lines, and a few unchanged lines around the edit. The list is a table with the title, or Untitled when the title is blank, and the day it was last edited. A mark beside the title shows when Allow LLM updates is on. The document you saved most recently stays at the top. Delete, in the list or in the window, removes the document and its versions.
+
+Allow LLM updates, in the document window, is off until you turn it on. After a daily summary is saved, and after each action-item pass, the model reads every document with that box checked. The summary window says Checking for knowledge base updates while that runs. The model sees the title, description, and text, plus the finished summary or the same transcript stretch that was sent for action items. If it decides the document should change, the new text is saved, the last edited day moves, and the previous text is kept as a version. New or changed facts are stamped with when they were heard, such as [Sep 23, 2026, 3:04 PM]. A transcript line only has a clock time, so that time is paired with the date the material was heard. Times already in the document stay as they are. The instruction for that update is edited from System Prompt > Knowledge… in the menu bar and stored as `knowledgeSystemPrompt`. An empty prompt uses the built-in one. Reset restores the built-in text.

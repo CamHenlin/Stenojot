@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>How to use Stenojot</title>
-  <meta name="description" content="How to transcribe, ignore app audio, pause while Music plays, take notes, ask questions, set text replacements, and edit the system prompts in Stenojot.">
+  <meta name="description" content="How to transcribe, ignore app audio, pause while Music plays, take notes, ask questions, keep a knowledge base, set text replacements, and edit the system prompts in Stenojot.">
   <meta name="theme-color" content="#f3f0e8">
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -42,6 +42,7 @@
           <li><a href="#questions">Questions</a></li>
           <li><a href="#replacements">Replacements</a></li>
           <li><a href="#summaries">Daily summaries</a></li>
+          <li><a href="#knowledge">Knowledge base</a></li>
           <li><a href="#prompts">System prompts</a></li>
         </ul>
         <article class="prose">
@@ -70,7 +71,7 @@
           <p>Choose a language model from <strong>LLM Settings</strong> in the menu bar (⇧⌘L). The weights download once into the app’s folder and stay there after you quit. Several sizes are available, from a small model that fits a short question on an 8&nbsp;GB Mac to larger ones that handle a full day more comfortably.</p>
           <p>Open the LLM panel at the bottom of the transcript. The context line says whether the question is about the full day or about the stretch you selected. Click a line, then another, to choose that stretch. Clear selection sends the whole day.</p>
           <p>Type a question and press Send, or ⌘Return. The prompt includes who said each line, and any notes in that stretch. The reply streams into the panel and is saved on the transcript.</p>
-          <p>The same loaded model writes action items and daily summaries. Switching models unloads the previous one.</p>
+          <p>The same loaded model writes action items, daily summaries, and knowledge-base updates. Switching models unloads the previous one.</p>
 
           <h2 id="replacements">Replacements</h2>
           <p>Open <strong>Text Replacement Settings</strong> from the menu bar. Each rule is a find-and-replace pair. New lines are rewritten before they are saved.</p>
@@ -86,9 +87,16 @@
           <p>The day is split into stretches. A new stretch starts after more than a minute with nothing said, so two conversations that follow each other closely can stay in one stretch. The model summarizes each stretch. Notes are included when they add something the transcript does not. Action items for the day are appended on their own.</p>
           <p>A second pass then reads the finished summary and removes passages that add nothing, such as a note that someone only said “Yeah.” The result opens in its own window. Edit it and press Save. <strong>Regenerate</strong> runs the summary again and replaces that day, including unsaved edits. Change the summary prompts first if you want a different result.</p>
           <p>If the app stays open past midnight, it writes summaries for the days that ended while it was running. A day it was closed for is left alone until you press Generate.</p>
+          <p>After the summary is saved, documents with <strong>Allow LLM updates</strong> turned on are checked against it. While that runs, the summary window says “Checking for knowledge base updates.”</p>
+
+          <h2 id="knowledge">Knowledge base</h2>
+          <p>Under the day list, the sidebar has a knowledge base. <strong>Add</strong> creates a document and opens it. The window has a title, a description, and a text body. Edit them and press Save. A blank title shows as Untitled in the list.</p>
+          <p>The list is a table: the title, and the day it was last edited. The document you saved most recently stays at the top. A mark beside the title means Allow LLM updates is on for that document.</p>
+          <p>Each save keeps the previous version. <strong>History</strong> lists those earlier saves. Choosing one shows what changed between that version and the save that replaced it: removed lines, added lines, and a few unchanged lines around the edit. Back, or Escape, returns to the editor. Delete, in the list or in the window, removes the document and its versions.</p>
+          <p><strong>Allow LLM updates</strong> is off until you turn it on for that document. After a daily summary is saved, and after each action-item pass, the model reads every document with the box checked. It sees the title, description, and text, plus the finished summary or the same transcript stretch that was sent for action items. If the document should change, the new text is saved, the last edited day moves, and the previous text is kept as a version. New or changed facts are stamped with when they were heard, such as [Sep 23, 2026, 3:04 PM]. If nothing should change, the document is left as it is.</p>
 
           <h2 id="prompts">System prompts</h2>
-          <p>The menu bar has a <strong>System Prompt</strong> menu with four instructions. Each one opens its own window. Save stores the text on this Mac. An empty instruction uses the built-in one, except Transcript, where empty means no extra instruction at all. Reset restores that window’s built-in text, or clears Transcript.</p>
+          <p>The menu bar has a <strong>System Prompt</strong> menu with five instructions. Each one opens its own window. Save stores the text on this Mac. An empty instruction uses the built-in one, except Transcript, where empty means no extra instruction at all. Reset restores that window’s built-in text, or clears Transcript.</p>
 
           <h3 id="prompt-transcript">Transcript</h3>
           <p>This instruction is sent with questions you ask in the LLM panel. It steers how those answers are written. Leave it empty to send only the transcript and the question. Reset clears it.</p>
@@ -102,6 +110,9 @@
 
           <h3 id="prompt-summary-2">Summary Pass 2</h3>
           <p>This instruction is the cleanup pass over the finished summary. The built-in one drops passages that add no information and keeps useful facts, the date heading, time headings, and action items when they are worth keeping. It is not supposed to add new content. An empty instruction uses that built-in text. Reset restores it.</p>
+
+          <h3 id="prompt-knowledge">Knowledge</h3>
+          <p>This instruction is sent for each knowledge document that allows model updates, after a daily summary is saved and after each action-item pass. The built-in one changes the document only when the new material adds, corrects, or removes something worth keeping, and it puts a datetime beside each new or changed fact for when that information was heard. If nothing should change, the reply is <strong>NO UPDATE</strong>. An empty instruction uses that built-in text. Reset restores it.</p>
         </article>
       </div>
     </div>

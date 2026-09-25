@@ -69,6 +69,7 @@ final class AppModel {
     var summarySystemPromptSaved = false
     var summaryPass2SystemPromptSaved = false
     var actionItemsSystemPromptSaved = false
+    var knowledgeSystemPromptSaved = false
     var llmDownloadingId: String?
     var llmDownloadFraction: Double?
     var llmDownloadError: String?
@@ -88,6 +89,14 @@ final class AppModel {
     var summaryStatus: String?
     /// Bumped when a day's saved summary text changes, so an open summary window can refresh.
     var dailySummaryRevision = 0
+
+    /// Documents in the knowledge base, newest edit first.
+    var knowledgeDocuments: [KnowledgeDocument] = []
+    /// Previous saves for each document, newest archived save first.
+    var knowledgeVersionsByDocument: [Int64: [KnowledgeDocumentVersion]] = [:]
+    /// Bumped when a document is saved or removed, so an open document window can refresh or close.
+    var knowledgeRevision = 0
+    var knowledgeCreateInFlight = false
 
     var applyAllResult = ""
     var applyingAll = false
@@ -119,6 +128,7 @@ final class AppModel {
     private var summaryPromptSavedTask: Task<Void, Never>?
     private var summaryPass2PromptSavedTask: Task<Void, Never>?
     private var actionItemsPromptSavedTask: Task<Void, Never>?
+    private var knowledgePromptSavedTask: Task<Void, Never>?
     private var gapTask: Task<Void, Never>?
     private var extractTask: Task<Void, Never>?
     private var extractGeneration = 0
@@ -511,6 +521,28 @@ final class AppModel {
         }
     }
 
+    /// Prompt shown in the knowledge update editor. A blank stored value is the built-in prompt.
+    var knowledgeSystemPromptText: String {
+        KnowledgeUpdates.systemPrompt(stored: config.knowledgeSystemPrompt)
+    }
+
+    func saveKnowledgeSystemPrompt(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        config.knowledgeSystemPrompt = trimmed == KnowledgeUpdates.systemPrompt ? "" : trimmed
+        do {
+            try AppSupport.ensureDirectory()
+            try ConfigStore.save(config, to: AppSupport.configURL)
+            knowledgeSystemPromptSaved = true
+            knowledgePromptSavedTask?.cancel()
+            knowledgePromptSavedTask = Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                knowledgeSystemPromptSaved = false
+            }
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
     func setAudioCaptureIgnored(bundleID: String, ignored: Bool) {
         let trimmed = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -890,6 +922,7 @@ final class AppModel {
         isDatabaseReady = true
         loadActionItems()
         loadDailySummaries()
+        loadKnowledgeDocuments()
         startDailySummaryClock()
     }
 
@@ -904,6 +937,10 @@ final class AppModel {
         cancelDailySummaryWork()
         dailySummaryTextByDay = [:]
         dailySummaryRevision += 1
+        knowledgeDocuments = []
+        knowledgeVersionsByDocument = [:]
+        knowledgeRevision += 1
+        knowledgeCreateInFlight = false
         actionItemsExtracting = false
         actionItemScanInFlight = false
         actionItemExtractionQueued = false
@@ -1318,8 +1355,8 @@ final class AppModel {
             for segment in segments {
                 guard actionItemExtractionIsCurrent(generation) else { return }
                 var output = ""
+                let user = ActionItems.userPrompt(transcriptions: segment)
                 do {
-                    let user = ActionItems.userPrompt(transcriptions: segment)
                     for try await chunk in localLLM.stream(
                         modelId: modelId,
                         system: ActionItems.systemPrompt(stored: config.actionItemsSystemPrompt),
@@ -1348,6 +1385,13 @@ final class AppModel {
                     finishActionItemExtraction(generation: generation)
                     return
                 }
+                await updateOptedInKnowledgeDocuments(
+                    material: user,
+                    source: .actionItemTranscript,
+                    modelId: modelId,
+                    isCurrent: { self.actionItemExtractionIsCurrent(generation) }
+                )
+                guard actionItemExtractionIsCurrent(generation) else { return }
             }
             finishActionItemExtraction(generation: generation)
         }
@@ -1424,6 +1468,258 @@ final class AppModel {
     /// Runs the summary again and replaces the one already saved for this day.
     func regenerateDailySummary(day: String) {
         enqueueDailySummary(day: day, manual: true, replace: true)
+    }
+
+    func knowledgeDocument(id: Int64) -> KnowledgeDocument? {
+        knowledgeDocuments.first { $0.id == id }
+    }
+
+    func knowledgeVersions(for documentID: Int64) -> [KnowledgeDocumentVersion] {
+        knowledgeVersionsByDocument[documentID] ?? []
+    }
+
+    func addKnowledgeDocument(onCreated: @escaping (Int64) -> Void) {
+        guard let store, !knowledgeCreateInFlight else { return }
+        knowledgeCreateInFlight = true
+        let timestamp = Timestamp.nowISO8601()
+        dbQueue.async {
+            do {
+                let document = try store.insertKnowledgeDocument(
+                    title: "",
+                    description: "",
+                    text: "",
+                    timestamp: timestamp
+                )
+                DispatchQueue.main.async {
+                    self.knowledgeCreateInFlight = false
+                    self.upsertKnowledgeDocument(document)
+                    onCreated(document.id)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.knowledgeCreateInFlight = false
+                    self.alertMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func saveKnowledgeDocument(id: Int64, title: String, description: String, text: String) {
+        guard let store else { return }
+        let timestamp = Timestamp.nowISO8601()
+        dbQueue.async {
+            do {
+                let update = try store.updateKnowledgeDocument(
+                    id: id,
+                    title: title,
+                    description: description,
+                    text: text,
+                    timestamp: timestamp
+                )
+                DispatchQueue.main.async {
+                    guard case .saved = update, var document = self.knowledgeDocument(id: id) else { return }
+                    document.title = title
+                    document.description = description
+                    document.text = text
+                    document.updatedAt = timestamp
+                    self.upsertKnowledgeDocument(document)
+                    self.loadKnowledgeVersions(documentID: id)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func setKnowledgeAllowsLLMUpdates(id: Int64, allowed: Bool) {
+        guard let store, let document = knowledgeDocument(id: id), document.allowsLLMUpdates != allowed else { return }
+        dbQueue.async {
+            do {
+                try store.setKnowledgeDocumentAllowsLLMUpdates(id: id, allowed: allowed)
+                DispatchQueue.main.async {
+                    guard let index = self.knowledgeDocuments.firstIndex(where: { $0.id == id }) else { return }
+                    self.knowledgeDocuments[index].allowsLLMUpdates = allowed
+                    self.knowledgeRevision += 1
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                    self.knowledgeRevision += 1
+                }
+            }
+        }
+    }
+
+    /// Asks the model about each opted-in document. A reply that changes the document is saved as a new version.
+    private func updateOptedInKnowledgeDocuments(
+        material: String,
+        source: KnowledgeUpdateSource,
+        modelId: String,
+        isCurrent: @MainActor () -> Bool,
+        onProgress: (@MainActor (Int, Int) -> Void)? = nil
+    ) async {
+        guard isCurrent() else { return }
+        let documents: [KnowledgeDocument]
+        do {
+            documents = try await fetchKnowledgeDocumentsAllowingLLMUpdates()
+        } catch {
+            guard isCurrent() else { return }
+            alertMessage = error.localizedDescription
+            return
+        }
+        guard !documents.isEmpty else { return }
+        for (offset, document) in documents.enumerated() {
+            guard isCurrent() else { return }
+            onProgress?(offset + 1, documents.count)
+            do {
+                try await proposeKnowledgeUpdate(
+                    document: document,
+                    material: material,
+                    source: source,
+                    modelId: modelId,
+                    isCurrent: isCurrent
+                )
+            } catch {
+                guard isCurrent() else { return }
+                alertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func proposeKnowledgeUpdate(
+        document: KnowledgeDocument,
+        material: String,
+        source: KnowledgeUpdateSource,
+        modelId: String,
+        isCurrent: @MainActor () -> Bool
+    ) async throws {
+        var output = ""
+        let user = KnowledgeUpdates.userPrompt(
+            document: document.revision,
+            material: material,
+            source: source,
+            heardAt: Timestamp.nowISO8601()
+        )
+        for try await chunk in localLLM.stream(
+            modelId: modelId,
+            system: KnowledgeUpdates.systemPrompt(stored: config.knowledgeSystemPrompt),
+            user: user,
+            maxTokens: KnowledgeUpdates.maxTokens(for: document.revision)
+        ) {
+            guard isCurrent() else { return }
+            output += chunk
+        }
+        guard isCurrent() else { return }
+        guard case .update(let revision) = KnowledgeUpdates.parse(modelOutput: output) else { return }
+        try await applyKnowledgeModelRevision(document: document, revision: revision)
+    }
+
+    private func applyKnowledgeModelRevision(document: KnowledgeDocument, revision: KnowledgeRevision) async throws {
+        guard let store else { return }
+        let timestamp = Timestamp.nowISO8601()
+        let update = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<KnowledgeDocumentUpdate, Error>) in
+            dbQueue.async {
+                do {
+                    let result = try store.updateKnowledgeDocument(
+                        id: document.id,
+                        title: revision.title,
+                        description: revision.description,
+                        text: revision.text,
+                        timestamp: timestamp,
+                        expectedUpdatedAt: document.updatedAt
+                    )
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+        guard case .saved = update else { return }
+        guard var stored = knowledgeDocument(id: document.id) else { return }
+        stored.title = revision.title
+        stored.description = revision.description
+        stored.text = revision.text
+        stored.updatedAt = timestamp
+        upsertKnowledgeDocument(stored)
+        loadKnowledgeVersions(documentID: document.id)
+        TranscriptionLog.info("Updated knowledge document \(stored.displayTitle)")
+    }
+
+    private func fetchKnowledgeDocumentsAllowingLLMUpdates() async throws -> [KnowledgeDocument] {
+        guard let store else { return [] }
+        return try await withCheckedThrowingContinuation { continuation in
+            dbQueue.async {
+                do {
+                    continuation.resume(returning: try store.fetchKnowledgeDocumentsAllowingLLMUpdates())
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    func deleteKnowledgeDocument(id: Int64) {
+        guard let store else { return }
+        dbQueue.async {
+            do {
+                try store.deleteKnowledgeDocument(id: id)
+                DispatchQueue.main.async {
+                    self.knowledgeDocuments.removeAll { $0.id == id }
+                    self.knowledgeVersionsByDocument[id] = nil
+                    self.knowledgeRevision += 1
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func loadKnowledgeVersions(documentID: Int64) {
+        guard let store else { return }
+        dbQueue.async {
+            do {
+                let versions = try store.fetchKnowledgeVersions(documentID: documentID)
+                DispatchQueue.main.async {
+                    self.knowledgeVersionsByDocument[documentID] = versions
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func loadKnowledgeDocuments() {
+        guard let store else { return }
+        dbQueue.async {
+            do {
+                let documents = try store.fetchKnowledgeDocuments()
+                DispatchQueue.main.async {
+                    self.knowledgeDocuments = documents
+                    self.knowledgeRevision += 1
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    /// Replaces one document and keeps the list ordered by the newest edit.
+    private func upsertKnowledgeDocument(_ document: KnowledgeDocument) {
+        knowledgeDocuments.removeAll { $0.id == document.id }
+        knowledgeDocuments.append(document)
+        knowledgeDocuments.sort { lhs, rhs in
+            if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
+            return lhs.id > rhs.id
+        }
+        knowledgeRevision += 1
     }
 
     func saveDailySummary(day: String, text: String) {
@@ -1688,6 +1984,23 @@ final class AppModel {
             reportDailySummaryFailure(day: day, manual: manual, message: error.localizedDescription)
             return
         }
+        guard summaryIsCurrent(generation) else {
+            endDailySummaryUI(generation)
+            return
+        }
+        await updateOptedInKnowledgeDocuments(
+            material: text,
+            source: .dailySummary,
+            modelId: modelId,
+            isCurrent: { self.summaryIsCurrent(generation) },
+            onProgress: { index, count in
+                if count > 1 {
+                    self.summaryProgress = "Checking for knowledge base updates (\(index) of \(count))"
+                } else {
+                    self.summaryProgress = "Checking for knowledge base updates"
+                }
+            }
+        )
         endDailySummaryUI(generation)
     }
 

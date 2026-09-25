@@ -60,6 +60,7 @@ final class LocalLanguageModelTests: XCTestCase {
         XCTAssertEqual(legacyConfig.summarySystemPrompt, "")
         XCTAssertEqual(legacyConfig.summaryPass2SystemPrompt, "")
         XCTAssertEqual(legacyConfig.actionItemsSystemPrompt, "")
+        XCTAssertEqual(legacyConfig.knowledgeSystemPrompt, "")
         XCTAssertEqual(legacyConfig.ignoredAudioBundleIDs, [])
         XCTAssertFalse(legacyConfig.pauseWhileMusicPlaying)
     }

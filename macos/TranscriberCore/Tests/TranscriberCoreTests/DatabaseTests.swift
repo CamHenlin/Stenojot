@@ -334,4 +334,233 @@ final class DatabaseTests: XCTestCase {
             XCTAssertTrue(try store.fetchActionItems(onDay: monday).isEmpty)
         }
     }
+
+    func testKnowledgeDocumentsRoundTripAndSortByRecentEdit() throws {
+        let url = directory.appendingPathComponent("knowledge.db")
+        try DatabaseImporter.createEmptyDatabase(at: url)
+        let store = try TranscriptStore(path: url.path)
+
+        let first = try store.insertKnowledgeDocument(
+            title: "Runbook",
+            description: "Deploy steps",
+            text: "Ship the build.",
+            timestamp: "2026-09-23T15:00:00Z"
+        )
+        let second = try store.insertKnowledgeDocument(
+            title: "",
+            description: "  ",
+            text: "Names and terms.",
+            timestamp: "2026-09-23T16:00:00Z"
+        )
+        XCTAssertEqual(second.displayTitle, "Untitled")
+        XCTAssertEqual(try store.fetchKnowledgeDocuments().map(\.id), [second.id, first.id])
+
+        try store.updateKnowledgeDocument(
+            id: first.id,
+            title: "Runbook v2",
+            description: "Updated steps",
+            text: "Ship the signed build.",
+            timestamp: "2026-09-24T12:00:00Z"
+        )
+        let updated = try store.fetchKnowledgeDocument(id: first.id)
+        XCTAssertEqual(updated?.title, "Runbook v2")
+        XCTAssertEqual(updated?.description, "Updated steps")
+        XCTAssertEqual(updated?.text, "Ship the signed build.")
+        XCTAssertEqual(updated?.createdAt, "2026-09-23T15:00:00Z")
+        XCTAssertEqual(updated?.updatedAt, "2026-09-24T12:00:00Z")
+        XCTAssertEqual(try store.fetchKnowledgeDocuments().map(\.id), [first.id, second.id])
+
+        try store.deleteKnowledgeDocument(id: second.id)
+        XCTAssertNil(try store.fetchKnowledgeDocument(id: second.id))
+        XCTAssertEqual(try store.fetchKnowledgeDocuments().map(\.id), [first.id])
+    }
+
+    func testKnowledgeDocumentsMigrateOntoAnExistingDatabase() throws {
+        let url = directory.appendingPathComponent("legacy-knowledge.db")
+        let legacy = try DatabaseQueue(path: url.path)
+        try legacy.write { db in
+            try db.execute(sql: """
+            CREATE TABLE transcriptions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              timestamp TEXT NOT NULL,
+              text TEXT NOT NULL,
+              raw_output TEXT NOT NULL
+            )
+            """)
+            try db.execute(sql: """
+            CREATE TABLE annotations (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              after_transcription_id INTEGER,
+              timestamp TEXT NOT NULL,
+              text TEXT NOT NULL
+            )
+            """)
+        }
+
+        let store = try TranscriptStore(path: url.path)
+        let document = try store.insertKnowledgeDocument(
+            title: "Glossary",
+            description: "Project terms",
+            text: "Stenojot writes both sides of a call.",
+            timestamp: "2026-09-23T15:00:00Z"
+        )
+        XCTAssertEqual(try store.fetchKnowledgeDocuments(), [document])
+        XCTAssertTrue(try store.fetchKnowledgeVersions(documentID: document.id).isEmpty)
+    }
+
+    func testKnowledgeDocumentUpdateKeepsThePreviousVersion() throws {
+        let url = directory.appendingPathComponent("knowledge-versions.db")
+        try DatabaseImporter.createEmptyDatabase(at: url)
+        let store = try TranscriptStore(path: url.path)
+        let document = try store.insertKnowledgeDocument(
+            title: "Runbook",
+            description: "Deploy steps",
+            text: "Ship the build.",
+            timestamp: "2026-09-23T15:00:00Z"
+        )
+
+        let first = try store.updateKnowledgeDocument(
+            id: document.id,
+            title: "Runbook v2",
+            description: "Updated steps",
+            text: "Ship the signed build.",
+            timestamp: "2026-09-24T12:00:00Z"
+        )
+        guard case .saved(let archived) = first else {
+            return XCTFail("Expected the first edit to archive the previous text")
+        }
+        XCTAssertEqual(archived.title, "Runbook")
+        XCTAssertEqual(archived.description, "Deploy steps")
+        XCTAssertEqual(archived.text, "Ship the build.")
+        XCTAssertEqual(archived.savedAt, "2026-09-23T15:00:00Z")
+
+        let same = try store.updateKnowledgeDocument(
+            id: document.id,
+            title: "Runbook v2",
+            description: "Updated steps",
+            text: "Ship the signed build.",
+            timestamp: "2026-09-24T13:00:00Z"
+        )
+        XCTAssertEqual(same, .unchanged)
+        XCTAssertEqual(try store.fetchKnowledgeDocument(id: document.id)?.updatedAt, "2026-09-24T12:00:00Z")
+
+        let second = try store.updateKnowledgeDocument(
+            id: document.id,
+            title: "Runbook v2",
+            description: "Updated steps",
+            text: "Ship the signed build.\nCheck the logs.",
+            timestamp: "2026-09-25T12:00:00Z"
+        )
+        guard case .saved(let later) = second else {
+            return XCTFail("Expected the second edit to archive the previous text")
+        }
+        XCTAssertEqual(later.text, "Ship the signed build.")
+        XCTAssertEqual(later.savedAt, "2026-09-24T12:00:00Z")
+        XCTAssertEqual(
+            try store.fetchKnowledgeVersions(documentID: document.id).map(\.text),
+            ["Ship the signed build.", "Ship the build."]
+        )
+
+        let versions = try store.fetchKnowledgeVersions(documentID: document.id)
+        let current = try XCTUnwrap(store.fetchKnowledgeDocument(id: document.id))
+        let newestChange = KnowledgeHistory.successor(
+            of: versions[0].id,
+            versions: versions,
+            current: current.revision,
+            currentSavedAt: current.updatedAt
+        )
+        XCTAssertEqual(newestChange?.revision.text, "Ship the signed build.\nCheck the logs.")
+        XCTAssertEqual(newestChange?.savedAt, "2026-09-25T12:00:00Z")
+        let olderChange = KnowledgeHistory.successor(
+            of: versions[1].id,
+            versions: versions,
+            current: current.revision,
+            currentSavedAt: current.updatedAt
+        )
+        XCTAssertEqual(olderChange?.revision.text, "Ship the signed build.")
+        XCTAssertEqual(olderChange?.savedAt, "2026-09-24T12:00:00Z")
+
+        try store.deleteKnowledgeDocument(id: document.id)
+        XCTAssertTrue(try store.fetchKnowledgeVersions(documentID: document.id).isEmpty)
+        XCTAssertNil(try store.fetchKnowledgeDocument(id: document.id))
+    }
+
+    func testKnowledgeDocumentLLMUpdateFlagDoesNotCreateAVersion() throws {
+        let url = directory.appendingPathComponent("knowledge-llm-flag.db")
+        try DatabaseImporter.createEmptyDatabase(at: url)
+        let store = try TranscriptStore(path: url.path)
+        let document = try store.insertKnowledgeDocument(
+            title: "Glossary",
+            description: "Terms",
+            text: "Stenojot.",
+            timestamp: "2026-09-23T15:00:00Z"
+        )
+        XCTAssertFalse(document.allowsLLMUpdates)
+        XCTAssertTrue(try store.fetchKnowledgeDocumentsAllowingLLMUpdates().isEmpty)
+
+        try store.setKnowledgeDocumentAllowsLLMUpdates(id: document.id, allowed: true)
+        let optedIn = try XCTUnwrap(store.fetchKnowledgeDocument(id: document.id))
+        XCTAssertTrue(optedIn.allowsLLMUpdates)
+        XCTAssertEqual(optedIn.updatedAt, "2026-09-23T15:00:00Z")
+        XCTAssertTrue(try store.fetchKnowledgeVersions(documentID: document.id).isEmpty)
+        XCTAssertEqual(try store.fetchKnowledgeDocumentsAllowingLLMUpdates().map(\.id), [document.id])
+
+        let skipped = try store.updateKnowledgeDocument(
+            id: document.id,
+            title: "Glossary v2",
+            description: "Terms",
+            text: "Stenojot writes both sides.",
+            timestamp: "2026-09-24T12:00:00Z",
+            expectedUpdatedAt: "2026-09-24T00:00:00Z"
+        )
+        XCTAssertEqual(skipped, .unchanged)
+        XCTAssertEqual(try store.fetchKnowledgeDocument(id: document.id)?.text, "Stenojot.")
+
+        let saved = try store.updateKnowledgeDocument(
+            id: document.id,
+            title: "Glossary v2",
+            description: "Terms",
+            text: "Stenojot writes both sides.",
+            timestamp: "2026-09-24T12:00:00Z",
+            expectedUpdatedAt: document.updatedAt
+        )
+        guard case .saved = saved else {
+            return XCTFail("Expected the edit to archive the previous text")
+        }
+        let updated = try XCTUnwrap(store.fetchKnowledgeDocument(id: document.id))
+        XCTAssertTrue(updated.allowsLLMUpdates)
+        XCTAssertEqual(updated.text, "Stenojot writes both sides.")
+        XCTAssertEqual(updated.updatedAt, "2026-09-24T12:00:00Z")
+        XCTAssertEqual(try store.fetchKnowledgeVersions(documentID: document.id).map(\.text), ["Stenojot."])
+    }
+
+    func testAllowLLMUpdatesColumnMigratesOntoAnExistingKnowledgeTable() throws {
+        let url = directory.appendingPathComponent("knowledge-flag-migrate.db")
+        let legacy = try DatabaseQueue(path: url.path)
+        try legacy.write { db in
+            try db.execute(sql: """
+            CREATE TABLE knowledge_documents (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              title TEXT NOT NULL,
+              description TEXT NOT NULL,
+              text TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            )
+            """)
+            try db.execute(
+                sql: """
+                INSERT INTO knowledge_documents (title, description, text, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                arguments: ["Glossary", "Terms", "Stenojot.", "2026-09-23T15:00:00Z", "2026-09-23T15:00:00Z"]
+            )
+        }
+
+        let store = try TranscriptStore(path: url.path)
+        let document = try XCTUnwrap(store.fetchKnowledgeDocument(id: 1))
+        XCTAssertFalse(document.allowsLLMUpdates)
+        try store.setKnowledgeDocumentAllowsLLMUpdates(id: document.id, allowed: true)
+        XCTAssertEqual(try store.fetchKnowledgeDocumentsAllowingLLMUpdates().map(\.title), ["Glossary"])
+    }
 }

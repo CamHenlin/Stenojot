@@ -12,6 +12,7 @@ public enum ConfigStore {
             summarySystemPrompt: file.summarySystemPrompt ?? "",
             summaryPass2SystemPrompt: file.summaryPass2SystemPrompt ?? "",
             actionItemsSystemPrompt: file.actionItemsSystemPrompt ?? "",
+            knowledgeSystemPrompt: file.knowledgeSystemPrompt ?? "",
             ignoredAudioBundleIDs: file.ignoredAudioBundleIDs ?? [],
             pauseWhileMusicPlaying: file.pauseWhileMusicPlaying ?? false
         )
@@ -38,6 +39,7 @@ private struct FileConfig: Codable {
     var summarySystemPrompt: String?
     var summaryPass2SystemPrompt: String?
     var actionItemsSystemPrompt: String?
+    var knowledgeSystemPrompt: String?
     var ignoredAudioBundleIDs: [String]?
     var pauseWhileMusicPlaying: Bool?
 }

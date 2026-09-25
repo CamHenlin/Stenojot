@@ -104,7 +104,7 @@ Everything the app writes lives under `~/Library/Application Support/Stenojot/`:
 
 | Path | Contents |
 |---|---|
-| `transcriptions.db` | Transcripts, notes, action items, daily summaries |
+| `transcriptions.db` | Transcripts, notes, action items, daily summaries, knowledge documents |
 | `config.json` | Replacements, chat, action-item, and summary prompts, selected model id |
 | `models/` | Downloaded MLX weights |
 | `venv/` | Virtualenv created from the bundled CPython |
@@ -151,9 +151,28 @@ CREATE TABLE daily_summaries (
     generated_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE knowledge_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    allow_llm_updates INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE knowledge_document_versions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    text TEXT NOT NULL,
+    saved_at TEXT NOT NULL
+);
 ```
 
-`speaker` is `you` or `caller`. `kind` is `note` or `llm`. `raw_output` is stored and is not loaded into the message list. `day` is the local calendar day (`YYYY-MM-DD`).
+`speaker` is `you` or `caller`. `kind` is `note` or `llm`. `raw_output` is stored and is not loaded into the message list. `day` is the local calendar day (`YYYY-MM-DD`). Knowledge documents are user-written notes kept beside the transcript. `created_at` stays on the original insert. `updated_at` changes when the document is saved, and the sidebar lists the newest edit first. `allow_llm_updates` is 1 when a finished daily summary or action-item pass may revise that document. A save that changes the title, description, or text copies the previous content into `knowledge_document_versions`. `saved_at` is when that older content was saved. Turning `allow_llm_updates` on or off does not archive a version. Deleting a document deletes its versions.
 
 ## Configuration
 
@@ -166,6 +185,7 @@ CREATE TABLE daily_summaries (
 | `summarySystemPrompt` | Instruction sent with each stretch of a daily summary. Empty uses the built-in prompt |
 | `summaryPass2SystemPrompt` | Instruction for the cleanup pass over a finished daily summary. Empty uses the built-in prompt |
 | `actionItemsSystemPrompt` | Instruction sent when extracting action items from a finished transcript stretch. Empty uses the built-in prompt |
+| `knowledgeSystemPrompt` | Instruction sent when a summary or action-item pass may update a knowledge document. Empty uses the built-in prompt |
 | `localModelId` | Hugging Face id of the model chosen in LLM Settings |
 | `ignoredAudioBundleIDs` | Bundle ids left out of system-audio capture, chosen in Ignored Apps |
 

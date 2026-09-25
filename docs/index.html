@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stenojot — a transcript that stays on your Mac</title>
-  <meta name="description" content="Stenojot transcribes both sides of a conversation on your Mac, then keeps working: notes, action items, a summary of the day, and questions, all from a language model on the same machine.">
+  <meta name="description" content="Stenojot transcribes both sides of a conversation on your Mac, then keeps working: notes, action items, a summary of the day, a knowledge base, and questions, all from a language model on the same machine.">
   <meta name="theme-color" content="#f3f0e8">
   <meta property="og:title" content="Stenojot">
   <meta property="og:description" content="A transcript that stays useful after the words are written down. Local to your Mac.">
@@ -50,7 +50,7 @@
           Apple Silicon · macOS 14 or later
         </p>
         <h1>A transcript that stays <em>useful</em>.</h1>
-        <p class="lede">Stenojot listens on your Mac and writes both sides of a conversation. Notes sit in the transcript. A language model on the same machine pulls action items, summarizes the day, and answers questions about what was said.</p>
+        <p class="lede">Stenojot listens on your Mac and writes both sides of a conversation. Notes sit in the transcript. A language model on the same machine pulls action items, summarizes the day, updates a knowledge base you keep beside it, and answers questions about what was said.</p>
         <div class="actions">
           <a class="button" href="https://github.com/CamHenlin/Stenojot/releases/latest/download/Stenojot.zip">Download for Mac</a>
           <a class="ghost" href="https://github.com/CamHenlin/Stenojot">View the source</a>
@@ -97,6 +97,10 @@
             <h3>A summary of the day</h3>
             <p>Generate a summary from the day’s conversations. Notes are included when they add something, and action items are appended. Edit the result, or regenerate it.</p>
           </article>
+          <article>
+            <h3>A knowledge base</h3>
+            <p>Keep documents beside the transcript, with a title, a description, and a text body. Each save keeps the previous version, and History shows what changed. Turn on Allow LLM updates and the model can revise that document after a summary or an action-item pass, stamping new facts with when they were heard.</p>
+          </article>
         </div>
       </div>
     </section>
@@ -107,7 +111,7 @@
         <div class="points">
           <article>
             <h3>A database on disk</h3>
-            <p>Transcripts, notes, action items, and summaries live in Application Support. Start empty, or import a database you already have.</p>
+            <p>Transcripts, notes, action items, summaries, and knowledge documents live in Application Support. Start empty, or import a database you already have.</p>
           </article>
           <article>
             <h3>Models that download once</h3>
@@ -115,7 +119,7 @@
           </article>
           <article>
             <h3>Nothing is uploaded</h3>
-            <p>Questions, action items, and daily summaries run on the machine. Closing the window leaves listening on. Quitting stops it.</p>
+            <p>Questions, action items, daily summaries, and knowledge-base updates run on the machine. Closing the window leaves listening on. Quitting stops it.</p>
           </article>
         </div>
       </div>

@@ -22,6 +22,16 @@ public enum Timestamp {
         return nil
     }
 
+    /// A saved-at label such as "Sep 23, 2026, 3:04:05 PM". Seconds keep two saves in the same minute apart.
+    public static func formatDateTime(_ isoTimestamp: String, timeZone: TimeZone = .current) -> String {
+        guard let date = parse(isoTimestamp) else { return isoTimestamp }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "MMM d, yyyy, h:mm:ss a"
+        return formatter.string(from: date)
+    }
+
     public static func formatTime(_ isoTimestamp: String, timeZone: TimeZone = .current) -> String {
         guard let date = parse(isoTimestamp) else { return isoTimestamp }
         let formatter = DateFormatter()

@@ -43,6 +43,7 @@ struct TranscriberApp: App {
                     Button("Action Items…") { openWindow(id: AppWindow.actionItemsPrompt) }
                     Button("Summary…") { openWindow(id: AppWindow.summaryPrompt) }
                     Button("Summary Pass 2…") { openWindow(id: AppWindow.summaryPass2Prompt) }
+                    Button("Knowledge…") { openWindow(id: AppWindow.knowledgePrompt) }
                 }
             }
             CommandGroup(after: .importExport) {
@@ -93,9 +94,23 @@ struct TranscriberApp: App {
         }
         .defaultSize(width: 640, height: 480)
 
+        Window("Knowledge System Prompt", id: AppWindow.knowledgePrompt) {
+            KnowledgeSystemPromptView(model: model)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 640, height: 480)
+
         WindowGroup("Daily Summary", id: AppWindow.dailySummary, for: String.self) { $day in
             if let day, !day.isEmpty {
                 DailySummaryView(model: model, day: day)
+                    .preferredColorScheme(.dark)
+            }
+        }
+        .defaultSize(width: 720, height: 680)
+
+        WindowGroup("Knowledge", id: AppWindow.knowledgeDocument, for: Int64.self) { $documentID in
+            if let documentID {
+                KnowledgeDocumentView(model: model, documentID: documentID)
                     .preferredColorScheme(.dark)
             }
         }
@@ -111,7 +126,9 @@ enum AppWindow {
     static let actionItemsPrompt = "action-items-system-prompt"
     static let summaryPrompt = "summary-system-prompt"
     static let summaryPass2Prompt = "summary-pass-2-system-prompt"
+    static let knowledgePrompt = "knowledge-system-prompt"
     static let dailySummary = "daily-summary"
+    static let knowledgeDocument = "knowledge-document"
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

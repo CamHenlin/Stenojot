@@ -49,6 +49,8 @@ public struct AppConfig: Codable, Equatable {
     public var summaryPass2SystemPrompt: String
     /// Action-item extraction. Empty uses the built-in prompt.
     public var actionItemsSystemPrompt: String
+    /// Knowledge-document updates after a summary or an action-item pass. Empty uses the built-in prompt.
+    public var knowledgeSystemPrompt: String
     /// Bundle ids whose played audio is left out of system-audio capture.
     public var ignoredAudioBundleIDs: [String]
     /// When true, live audio is replaced with silence while the Music app is playing.
@@ -62,6 +64,7 @@ public struct AppConfig: Codable, Equatable {
         summarySystemPrompt: String = "",
         summaryPass2SystemPrompt: String = "",
         actionItemsSystemPrompt: String = "",
+        knowledgeSystemPrompt: String = "",
         ignoredAudioBundleIDs: [String] = [],
         pauseWhileMusicPlaying: Bool = false
     ) {
@@ -72,6 +75,7 @@ public struct AppConfig: Codable, Equatable {
         self.summarySystemPrompt = summarySystemPrompt
         self.summaryPass2SystemPrompt = summaryPass2SystemPrompt
         self.actionItemsSystemPrompt = actionItemsSystemPrompt
+        self.knowledgeSystemPrompt = knowledgeSystemPrompt
         self.ignoredAudioBundleIDs = ignoredAudioBundleIDs
         self.pauseWhileMusicPlaying = pauseWhileMusicPlaying
     }

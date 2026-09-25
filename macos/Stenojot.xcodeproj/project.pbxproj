@@ -12,6 +12,7 @@
 		1DF90D14747045FB4D7327CB /* SummarySystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232513C018A598DA712C6B88 /* SummarySystemPromptView.swift */; };
 		2302C0C21E23957904AE8AB8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44558231B94DEF8F8ADD56FF /* SettingsView.swift */; };
 		240B9277B4E7AEF9BBD8A87A /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = 90E83830F62EE6DF75BC82BC /* Tokenizers */; };
+		3799E86869244B4EF7CEB446 /* KnowledgeDocumentDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACE6A9A87A748F4468902E8 /* KnowledgeDocumentDiffView.swift */; };
 		39B49AADDE2399ED739B5413 /* SystemAudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949E426BD69AC8E9DBDC992C /* SystemAudioCapture.swift */; };
 		4F3E70179E8485CA032935CA /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = FC0BC0D1022D46050BDB2673 /* HuggingFace */; };
 		5DF1C39A49854C4A2554E9A0 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF359800D0E885CE369D232E /* AppModel.swift */; };
@@ -20,7 +21,10 @@
 		684CC625CCE66F168C034CC0 /* TranscriberCore in Frameworks */ = {isa = PBXBuildFile; productRef = C052676A378C5BAE5149481C /* TranscriberCore */; };
 		7225D2A7D978399C09E16E71 /* LLMPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89603FFFD005555BC974C75B /* LLMPanel.swift */; };
 		79B1E533C54282A8E9BF04F7 /* ActionItemsSystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01185D635146EB0416472CC /* ActionItemsSystemPromptView.swift */; };
+		7B18112B029BEE88843C7AE4 /* KnowledgeDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DAF68FA9825D3E147C4FAB2 /* KnowledgeDocumentView.swift */; };
 		80BA80408DA3C9D57F7D9530 /* NoteTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8A30C01F0F54A0F3842F6A /* NoteTextEditor.swift */; };
+		8A68A61CF52EED854BFEE128 /* KnowledgeSystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2EF99987D6A5EF2BCBE4FDF /* KnowledgeSystemPromptView.swift */; };
+		926D696942A41090728FF8CB /* KnowledgeBasePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C345225BDE1CDD0ACB2D403D /* KnowledgeBasePanel.swift */; };
 		9A998137F189709FE522F516 /* TranscriptSystemPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD86C8FD0F3AE1670093D3F6 /* TranscriptSystemPromptView.swift */; };
 		A6CDDD3FEC860D3B8EEE96F0 /* DailySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CF8F4B34F94F052373BCBE /* DailySummaryView.swift */; };
 		AA12E9793FBAC1BDE97EA843 /* LLMSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44AE917E314B6A22044CC7B3 /* LLMSettingsView.swift */; };
@@ -45,6 +49,7 @@
 		2B3B1CD136551233025BD8AE /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		44558231B94DEF8F8ADD56FF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		44AE917E314B6A22044CC7B3 /* LLMSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMSettingsView.swift; sourceTree = "<group>"; };
+		4ACE6A9A87A748F4468902E8 /* KnowledgeDocumentDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeDocumentDiffView.swift; sourceTree = "<group>"; };
 		4D7B68F314CCECAED00C562C /* TranscriptionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionLog.swift; sourceTree = "<group>"; };
 		5146354338DC6F72E875E81B /* TranscriberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriberApp.swift; sourceTree = "<group>"; };
 		53CF8F4B34F94F052373BCBE /* DailySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummaryView.swift; sourceTree = "<group>"; };
@@ -53,11 +58,14 @@
 		84A9225D6E151DC21F42523C /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		84E05E1B5E1B3DBF5426A592 /* TranscriberService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriberService.swift; sourceTree = "<group>"; };
 		89603FFFD005555BC974C75B /* LLMPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMPanel.swift; sourceTree = "<group>"; };
+		8DAF68FA9825D3E147C4FAB2 /* KnowledgeDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeDocumentView.swift; sourceTree = "<group>"; };
 		90C7FCF5D888C6693E323614 /* LocalLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
 		949E426BD69AC8E9DBDC992C /* SystemAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioCapture.swift; sourceTree = "<group>"; };
+		A2EF99987D6A5EF2BCBE4FDF /* KnowledgeSystemPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeSystemPromptView.swift; sourceTree = "<group>"; };
 		A6733319057C64DF302CFCB8 /* ActionItemsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionItemsPanel.swift; sourceTree = "<group>"; };
 		A9957EE7AC693EE543751FE0 /* Stenojot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stenojot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CED4D940FAAF6F22DC9901 /* PythonEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonEnvironment.swift; sourceTree = "<group>"; };
+		C345225BDE1CDD0ACB2D403D /* KnowledgeBasePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBasePanel.swift; sourceTree = "<group>"; };
 		CF359800D0E885CE369D232E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		DA8A30C01F0F54A0F3842F6A /* NoteTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTextEditor.swift; sourceTree = "<group>"; };
 		E01185D635146EB0416472CC /* ActionItemsSystemPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionItemsSystemPromptView.swift; sourceTree = "<group>"; };
@@ -101,6 +109,10 @@
 				551A3EC3BF809490AF5838D6 /* ContentView.swift */,
 				53CF8F4B34F94F052373BCBE /* DailySummaryView.swift */,
 				FC7A0DD12B3BA3170F3E5784 /* FirstLaunchView.swift */,
+				C345225BDE1CDD0ACB2D403D /* KnowledgeBasePanel.swift */,
+				4ACE6A9A87A748F4468902E8 /* KnowledgeDocumentDiffView.swift */,
+				8DAF68FA9825D3E147C4FAB2 /* KnowledgeDocumentView.swift */,
+				A2EF99987D6A5EF2BCBE4FDF /* KnowledgeSystemPromptView.swift */,
 				89603FFFD005555BC974C75B /* LLMPanel.swift */,
 				44AE917E314B6A22044CC7B3 /* LLMSettingsView.swift */,
 				DA8A30C01F0F54A0F3842F6A /* NoteTextEditor.swift */,
@@ -282,6 +294,10 @@
 				E86783AA1544306EE38B44BA /* ContentView.swift in Sources */,
 				A6CDDD3FEC860D3B8EEE96F0 /* DailySummaryView.swift in Sources */,
 				E598B852ADCF418C71F6C701 /* FirstLaunchView.swift in Sources */,
+				926D696942A41090728FF8CB /* KnowledgeBasePanel.swift in Sources */,
+				3799E86869244B4EF7CEB446 /* KnowledgeDocumentDiffView.swift in Sources */,
+				7B18112B029BEE88843C7AE4 /* KnowledgeDocumentView.swift in Sources */,
+				8A68A61CF52EED854BFEE128 /* KnowledgeSystemPromptView.swift in Sources */,
 				7225D2A7D978399C09E16E71 /* LLMPanel.swift in Sources */,
 				AA12E9793FBAC1BDE97EA843 /* LLMSettingsView.swift in Sources */,
 				62F2073EA7CEDFAE817E4A01 /* LocalLLMService.swift in Sources */,

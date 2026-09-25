@@ -10,6 +10,10 @@ final class TimelineTests: XCTestCase {
         XCTAssertNotNil(python)
         XCTAssertNotNil(javascript)
         XCTAssertEqual(Timestamp.formatTime("2026-09-23T15:04:05.123Z", timeZone: utc), "15:04:05")
+        XCTAssertEqual(
+            Timestamp.formatDateTime("2026-09-23T15:04:05Z", timeZone: utc),
+            "Sep 23, 2026, 3:04:05 PM"
+        )
     }
 
     func testDateLabels() {
@@ -19,6 +23,30 @@ final class TimelineTests: XCTestCase {
         XCTAssertEqual(Timestamp.formatDateLabel("2026-09-23", now: now, calendar: calendar), "Today")
         XCTAssertEqual(Timestamp.formatDateLabel("2026-09-22", now: now, calendar: calendar), "Yesterday")
         XCTAssertEqual(Timestamp.formatDateLabel("2026-09-21", now: now, calendar: calendar), "Mon, Sep 21")
+    }
+
+    func testKnowledgeDocumentLastEditedLabelUsesTheLocalDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = utc
+        let now = Timestamp.parse("2026-09-23T18:00:00Z")!
+        let document = KnowledgeDocument(
+            id: 1,
+            title: "Runbook",
+            description: "",
+            text: "",
+            createdAt: "2026-09-21T15:00:00Z",
+            updatedAt: "2026-09-23T15:00:00Z"
+        )
+        XCTAssertEqual(document.lastEditedLabel(now: now, calendar: calendar), "Today")
+        var yesterday = document
+        yesterday.updatedAt = "2026-09-22T15:00:00Z"
+        XCTAssertEqual(yesterday.lastEditedLabel(now: now, calendar: calendar), "Yesterday")
+        var older = document
+        older.updatedAt = "2026-09-21T15:00:00Z"
+        XCTAssertEqual(older.lastEditedLabel(now: now, calendar: calendar), "Mon, Sep 21")
+        var unreadable = document
+        unreadable.updatedAt = "not-a-timestamp"
+        XCTAssertEqual(unreadable.lastEditedLabel(now: now, calendar: calendar), "not-a-timestamp")
     }
 
     func testNoteTimestampStaysOnTheRequestedDay() {

@@ -75,6 +75,37 @@ public enum TranscriptSchema {
           updated_at TEXT NOT NULL
         )
         """)
+        try db.execute(sql: """
+        CREATE TABLE IF NOT EXISTS knowledge_documents (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          text TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          allow_llm_updates INTEGER NOT NULL DEFAULT 0
+        )
+        """)
+        if try !columnNames(db, table: "knowledge_documents").contains("allow_llm_updates") {
+            try db.execute(sql: """
+            ALTER TABLE knowledge_documents
+            ADD COLUMN allow_llm_updates INTEGER NOT NULL DEFAULT 0
+            """)
+        }
+        try db.execute(sql: """
+        CREATE TABLE IF NOT EXISTS knowledge_document_versions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          document_id INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          text TEXT NOT NULL,
+          saved_at TEXT NOT NULL
+        )
+        """)
+        try db.execute(sql: """
+        CREATE INDEX IF NOT EXISTS knowledge_document_versions_document
+          ON knowledge_document_versions(document_id)
+        """)
     }
 
     private static func columnNames(_ db: Database, table: String) throws -> [String] {
