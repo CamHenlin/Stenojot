@@ -1,5 +1,7 @@
 # Stenojot
 
+The project site is [camhenlin.github.io/Stenojot](https://camhenlin.github.io/Stenojot/).
+
 ![Stenojot showing a day's transcript, notes, and action items](Screenshot.png)
 
 ## About
