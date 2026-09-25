@@ -49,6 +49,8 @@ public struct AppConfig: Codable, Equatable {
     public var summaryPass2SystemPrompt: String
     /// Action-item extraction. Empty uses the built-in prompt.
     public var actionItemsSystemPrompt: String
+    /// Bundle ids whose played audio is left out of system-audio capture.
+    public var ignoredAudioBundleIDs: [String]
 
     public init(
         ollama: OllamaSettings = OllamaSettings(baseUrl: "http://localhost:11434", model: "gpt-oss:20b"),
@@ -57,7 +59,8 @@ public struct AppConfig: Codable, Equatable {
         localModelId: String? = nil,
         summarySystemPrompt: String = "",
         summaryPass2SystemPrompt: String = "",
-        actionItemsSystemPrompt: String = ""
+        actionItemsSystemPrompt: String = "",
+        ignoredAudioBundleIDs: [String] = []
     ) {
         self.ollama = ollama
         self.systemPrompt = systemPrompt
@@ -66,5 +69,6 @@ public struct AppConfig: Codable, Equatable {
         self.summarySystemPrompt = summarySystemPrompt
         self.summaryPass2SystemPrompt = summaryPass2SystemPrompt
         self.actionItemsSystemPrompt = actionItemsSystemPrompt
+        self.ignoredAudioBundleIDs = ignoredAudioBundleIDs
     }
 }

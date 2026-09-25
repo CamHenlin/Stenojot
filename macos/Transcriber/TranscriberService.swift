@@ -20,6 +20,12 @@ final class TranscriberService {
     private var didStartAudio = false
     private var announcedListening = false
     private var systemAudioFailure: String?
+    private var excludedBundleIDs: Set<String> = []
+
+    func setExcludedAudioBundleIDs(_ bundleIDs: Set<String>) {
+        excludedBundleIDs = bundleIDs
+        systemAudio.updateExcludedBundleIDs(bundleIDs)
+    }
 
     func start(python: URL, script: URL) async {
         stop()
@@ -178,7 +184,7 @@ final class TranscriberService {
         }
         Task {
             do {
-                try await systemAudio.start()
+                try await systemAudio.start(excludingBundleIDs: excludedBundleIDs)
                 TranscriptionLog.info("System audio capture started.")
             } catch {
                 noteSystemAudioFailure(error.localizedDescription)

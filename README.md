@@ -37,6 +37,8 @@ It is a Mac app. It listens while you talk, writes the transcript down as you go
 - Labels each line **You** or **Others**
 - On headphones, the two sides stay separate on their own. On speakers, call audio is taken out of the microphone so the other person is not written down twice
 - If call audio is declined, the microphone is still transcribed
+- Ignored Apps, in the menu bar, lists running apps. Check one to leave its audio out of transcription, such as Music or a game. The choice is remembered by bundle id and applied again the next time that app is running
+- On speakers, the microphone can still hear an ignored app. The exclusion applies to system audio
 - Starts listening when the app opens. Closing the window leaves it running. Quitting stops it
 - New lines appear as they are saved. The transcript stays pinned to the latest line until you scroll up
 - Drops a stray "Yeah" or "Okay" that shows up in a notification sound or other background noise
@@ -117,6 +119,8 @@ Launching the app starts listening and opens the transcript window. Closing the 
 The window opens on the latest day. The sidebar lists days, and the search field filters both the day list and the lines on the selected day. Matches include transcript text and notes. New lines show up as they are saved, and the list stays pinned to the bottom until you scroll up.
 
 Each line is labeled **You** or **Others**. Headphones keep the two streams apart on their own. On speakers, the app subtracts the call audio from the microphone so the other side is not transcribed twice. If system audio is declined, the app still transcribes the microphone and labels those lines You.
+
+Ignored Apps, in the menu bar, lists the apps that are running, with a checkbox for each. A checked app is left out of call audio, so Music or a game is not transcribed. Apps you have already ignored stay on the list when they are not running. On speakers, the microphone can still hear them.
 
 ### Notes and ranges
 

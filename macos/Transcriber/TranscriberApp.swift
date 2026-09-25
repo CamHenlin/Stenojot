@@ -33,6 +33,7 @@ struct TranscriberApp: App {
                 Button("LLM Settings…") { openWindow(id: AppWindow.llmSettings) }
                     .keyboardShortcut("l", modifiers: [.command, .shift])
                 Button("Text Replacement Settings…") { openWindow(id: AppWindow.textReplacements) }
+                Button("Ignored Apps…") { openWindow(id: AppWindow.ignoredApps) }
                 Menu("System Prompt") {
                     Button("Transcript…") { openWindow(id: AppWindow.transcriptPrompt) }
                     Button("Action Items…") { openWindow(id: AppWindow.actionItemsPrompt) }
@@ -57,6 +58,12 @@ struct TranscriberApp: App {
                 .preferredColorScheme(.dark)
         }
         .defaultSize(width: 640, height: 420)
+
+        Window("Ignored Apps", id: AppWindow.ignoredApps) {
+            IgnoredAppsView(model: model)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 480, height: 560)
 
         Window("Transcript System Prompt", id: AppWindow.transcriptPrompt) {
             TranscriptSystemPromptView(model: model)
@@ -95,6 +102,7 @@ struct TranscriberApp: App {
 enum AppWindow {
     static let llmSettings = "llm-settings"
     static let textReplacements = "text-replacements"
+    static let ignoredApps = "ignored-apps"
     static let transcriptPrompt = "transcript-system-prompt"
     static let actionItemsPrompt = "action-items-system-prompt"
     static let summaryPrompt = "summary-system-prompt"

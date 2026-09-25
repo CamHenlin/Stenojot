@@ -192,6 +192,7 @@ final class AppModel {
             if FileManager.default.fileExists(atPath: AppSupport.configURL.path) {
                 config = try ConfigStore.load(from: AppSupport.configURL)
             }
+            applyIgnoredAudioApps()
             refreshLocalModel()
         } catch {
             alertMessage = error.localizedDescription
@@ -505,6 +506,31 @@ final class AppModel {
         }
     }
 
+    func setAudioCaptureIgnored(bundleID: String, ignored: Bool) {
+        let trimmed = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        var ids = config.ignoredAudioBundleIDs
+        if ignored {
+            guard !ids.contains(trimmed) else { return }
+            ids.append(trimmed)
+        } else {
+            guard ids.contains(trimmed) else { return }
+            ids.removeAll { $0 == trimmed }
+        }
+        config.ignoredAudioBundleIDs = ids
+        do {
+            try AppSupport.ensureDirectory()
+            try ConfigStore.save(config, to: AppSupport.configURL)
+            applyIgnoredAudioApps()
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func applyIgnoredAudioApps() {
+        transcriber.setExcludedAudioBundleIDs(Set(config.ignoredAudioBundleIDs))
+    }
+
     @discardableResult
     func saveReplacements(_ rules: [ReplacementRule]) throws -> [ReplacementRule] {
         let cleaned = ReplacementEngine.sanitized(rules)
@@ -800,6 +826,7 @@ final class AppModel {
         try AppSupport.ensureDirectory()
         try ConfigStore.save(loaded, to: AppSupport.configURL)
         config = loaded
+        applyIgnoredAudioApps()
         refreshLocalModel()
     }
 

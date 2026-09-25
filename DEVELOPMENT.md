@@ -167,6 +167,7 @@ CREATE TABLE daily_summaries (
 | `summaryPass2SystemPrompt` | Instruction for the cleanup pass over a finished daily summary. Empty uses the built-in prompt |
 | `actionItemsSystemPrompt` | Instruction sent when extracting action items from a finished transcript stretch. Empty uses the built-in prompt |
 | `localModelId` | Hugging Face id of the model chosen in LLM Settings |
+| `ignoredAudioBundleIDs` | Bundle ids left out of system-audio capture, chosen in Ignored Apps |
 
 An older settings file may still contain an `ollama` block. The app keeps that block when it saves and runs the in-process MLX model instead.
 

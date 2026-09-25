@@ -175,7 +175,8 @@ final class DatabaseTests: XCTestCase {
             replacements: [ReplacementRule(from: "Linz", to: "LIMS")],
             summarySystemPrompt: "Keep each stretch short.",
             summaryPass2SystemPrompt: "Drop filler.",
-            actionItemsSystemPrompt: "Only commitments."
+            actionItemsSystemPrompt: "Only commitments.",
+            ignoredAudioBundleIDs: ["com.apple.Music"]
         )
         try ConfigStore.save(config, to: url)
         let loaded = try ConfigStore.load(from: url)

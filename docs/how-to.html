@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>How to use Stenojot</title>
-  <meta name="description" content="How to transcribe, take notes, ask questions, set text replacements, and edit the system prompts in Stenojot.">
+  <meta name="description" content="How to transcribe, ignore app audio, take notes, ask questions, set text replacements, and edit the system prompts in Stenojot.">
   <meta name="theme-color" content="#f3f0e8">
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -36,6 +36,7 @@
       <div class="guide">
         <ul class="toc">
           <li><a href="#transcription">Transcription</a></li>
+          <li><a href="#ignored-apps">Ignored apps</a></li>
           <li><a href="#notes">Notes</a></li>
           <li><a href="#questions">Questions</a></li>
           <li><a href="#replacements">Replacements</a></li>
@@ -50,6 +51,11 @@
           <p>Days are listed in the sidebar. Search filters that list and the lines on the selected day. Matches include the transcript and notes.</p>
           <p>Click one line, then another, to select a stretch. Copy puts that stretch on the clipboard, including notes that fall inside it. Escape clears a selection in progress. The same stretch is what the language model sees when you ask a question.</p>
           <p>A stray “Yeah” or “Okay” that shows up in a notification sound or other background noise is dropped.</p>
+
+          <h2 id="ignored-apps">Ignored apps</h2>
+          <p>Open <strong>Ignored Apps</strong> from the menu bar. The window lists apps that are running, with a checkbox beside each one. Check an app to leave its audio out of the transcript. Music, a game, or anything else playing in the background stays out.</p>
+          <p>The choice is saved by the app’s bundle id and applied again the next time that app is running, including if it launches while Stenojot is already listening. Apps you have ignored stay on the list when they are not running, marked Not running, so you can uncheck them. A filter at the top of the window narrows a long list.</p>
+          <p>This only affects audio the system can attribute to that app. On speakers, the microphone can still hear it. Headphones avoid that. Ignoring a browser drops every sound from that browser, including a call in a tab.</p>
 
           <h2 id="notes">Notes</h2>
           <p>Click the gap between lines to insert a note, or type a longer one in the composer at the bottom of the window and save it. Notes can be edited or deleted.</p>
