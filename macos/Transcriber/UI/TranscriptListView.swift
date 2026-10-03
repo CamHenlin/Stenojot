@@ -333,9 +333,11 @@ struct TranscriptRow: View {
         hovering && !model.rangeSelecting && !isInsideSelectedRange
     }
 
+    /// Copy and Clear stay on both ends of a range so a long selection can be
+    /// acted on without scrolling back to the first message.
     private var showsRangeActions: Bool {
         guard model.hasRange, let from = model.rangeFromId, let to = model.rangeToId else { return false }
-        return item.sourceId == min(from, to)
+        return item.sourceId == min(from, to) || item.sourceId == max(from, to)
     }
 
     private var isInsideSelectedRange: Bool {
